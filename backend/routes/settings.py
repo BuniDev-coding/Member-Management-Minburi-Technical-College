@@ -1,0 +1,257 @@
+"""ข้อมูลตั้งค่า: ตำแหน่ง ปีการศึกษา แผนกวิชา
+
+GET  /api/meta                         ข้อมูลประกอบฟอร์ม (ปี ตำแหน่ง แผนก สถานะ ระดับชั้น รูปแบบ)
+GET|POST        /api/positions         รายการ / เพิ่ม
+PUT|DELETE      /api/positions/<id>    แก้ไข / ลบ
+GET|POST        /api/years             รายการ (พร้อมจำนวนสมาชิก) / เพิ่ม
+PUT|DELETE      /api/years/<id>        แก้ไข / ลบ
+POST            /api/years/<id>/set-current   ตั้งเป็นปีการศึกษาปัจจุบัน
+GET|POST        /api/departments       รายการ / เพิ่ม
+PUT|DELETE      /api/departments/<id>  แก้ไข / ลบ
+"""
+from flask import Blueprint, jsonify, request
+from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
+
+from models import (db, Position, AcademicYear, Department, Member, MemberPosition,
+                    STATUSES, TEMPLATES, EDUCATION_LEVELS)
+from models.member import ACTIVITY_CATEGORIES
+from routes.members import in_year_clause
+from utils.auth import error, login_required, permission_required
+from utils.validators import ValidationError, clean_str, parse_bool, parse_date, parse_int
+
+bp = Blueprint("settings", __name__, url_prefix="/api")
+
+
+def _commit(msg_conflict):
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return error(msg_conflict, 409)
+    return None
+
+
+@bp.get("/meta")
+@login_required
+def meta():
+    cur = AcademicYear.current()
+    return jsonify({
+        "success": True,
+        "years": [y.to_dict() for y in AcademicYear.query.order_by(AcademicYear.year.desc())],
+        "current_year_id": cur.id if cur else None,
+        "positions": [p.to_dict() for p in Position.query.order_by(Position.level, Position.id)],
+        "departments": [d.to_dict() for d in Department.query.order_by(Department.name)],
+        "statuses": STATUSES,
+        "templates": TEMPLATES,
+        "levels": EDUCATION_LEVELS,
+        "activity_categories": ACTIVITY_CATEGORIES,
+    })
+
+
+# =====================================================================
+# ตำแหน่ง
+# =====================================================================
+@bp.get("/positions")
+@login_required
+def list_positions():
+    year_id = parse_int(request.args.get("year_id")) or (AcademicYear.current().id if AcademicYear.current() else None)
+    counts = dict(db.session.query(MemberPosition.position_id, func.count(MemberPosition.id))
+                  .filter(MemberPosition.academic_year_id == year_id).group_by(MemberPosition.position_id).all())
+    total_counts = dict(db.session.query(MemberPosition.position_id, func.count(MemberPosition.id))
+                        .group_by(MemberPosition.position_id).all())
+    items = []
+    for p in Position.query.order_by(Position.level, Position.id):
+        d = p.to_dict()
+        d["count"] = counts.get(p.id, 0)
+        d["total_records"] = total_counts.get(p.id, 0)
+        items.append(d)
+    return jsonify({"success": True, "items": items, "year_id": year_id})
+
+
+def _position_from(p: Position, data):
+    name = clean_str(data.get("name"), 100)
+    if not name:
+        raise ValidationError({"name": "กรุณากรอกชื่อตำแหน่ง"})
+    p.name = name
+    p.level = parse_int(data.get("level")) or 99
+    p.is_executive = parse_bool(data.get("is_executive", False))
+    p.is_committee = parse_bool(data.get("is_committee", False))
+    p.color = clean_str(data.get("color"), 20) or "#1F4FB5"
+    p.description = clean_str(data.get("description"))
+
+
+@bp.post("/positions")
+@permission_required("settings")
+def create_position():
+    p = Position()
+    try:
+        _position_from(p, request.get_json(silent=True) or {})
+    except ValidationError as e:
+        return error(str(e), 422)
+    db.session.add(p)
+    return _commit("มีชื่อตำแหน่งนี้อยู่แล้ว") or (jsonify({"success": True, "message": "เพิ่มตำแหน่งแล้ว",
+                                                           "item": p.to_dict()}), 201)
+
+
+@bp.put("/positions/<int:pid>")
+@permission_required("settings")
+def update_position(pid):
+    p = db.get_or_404(Position, pid, description="ไม่พบตำแหน่ง")
+    try:
+        _position_from(p, request.get_json(silent=True) or {})
+    except ValidationError as e:
+        return error(str(e), 422)
+    return _commit("มีชื่อตำแหน่งนี้อยู่แล้ว") or jsonify({"success": True, "message": "บันทึกแล้ว", "item": p.to_dict()})
+
+
+@bp.delete("/positions/<int:pid>")
+@permission_required("settings")
+def delete_position(pid):
+    p = db.get_or_404(Position, pid, description="ไม่พบตำแหน่ง")
+    used = MemberPosition.query.filter_by(position_id=pid).count()
+    if used:
+        return error(f"ลบไม่ได้ เนื่องจากมีประวัติการดำรงตำแหน่งนี้ {used} รายการ", 409)
+    db.session.delete(p)
+    db.session.commit()
+    return jsonify({"success": True, "message": "ลบตำแหน่งแล้ว"})
+
+
+# =====================================================================
+# ปีการศึกษา
+# =====================================================================
+@bp.get("/years")
+@login_required
+def list_years():
+    items = []
+    for y in AcademicYear.query.order_by(AcademicYear.year.desc()):
+        d = y.to_dict()
+        d["member_count"] = Member.query.filter(in_year_clause(y.id)).count()
+        d["registered_count"] = Member.query.filter_by(academic_year_id=y.id).count()
+        items.append(d)
+    return jsonify({"success": True, "items": items})
+
+
+def _year_from(y: AcademicYear, data):
+    year = parse_int(data.get("year"))
+    if not year or not (2400 <= year <= 2700):
+        raise ValidationError({"year": "กรุณากรอกปีการศึกษาเป็นปี พ.ศ. (เช่น 2569)"})
+    y.year = year
+    y.name = clean_str(data.get("name"), 100) or f"ปีการศึกษา {year}"
+    y.start_date = parse_date(data.get("start_date"))
+    y.end_date = parse_date(data.get("end_date"))
+    if y.start_date and y.end_date and y.end_date < y.start_date:
+        raise ValidationError({"end_date": "วันสิ้นสุดต้องไม่ก่อนวันเริ่มต้น"})
+    y.note = clean_str(data.get("note"))
+
+
+def _set_current(y: AcademicYear):
+    AcademicYear.query.update({AcademicYear.is_current: False})
+    y.is_current = True
+
+
+@bp.post("/years")
+@permission_required("settings")
+def create_year():
+    data = request.get_json(silent=True) or {}
+    y = AcademicYear()
+    try:
+        _year_from(y, data)
+    except ValidationError as e:
+        return error(str(e), 422)
+    db.session.add(y)
+    if parse_bool(data.get("is_current", False)) or AcademicYear.query.count() == 0:
+        db.session.flush()
+        _set_current(y)
+    return _commit("มีปีการศึกษานี้อยู่แล้ว") or (jsonify({"success": True, "message": "เพิ่มปีการศึกษาแล้ว",
+                                                          "item": y.to_dict()}), 201)
+
+
+@bp.put("/years/<int:yid>")
+@permission_required("settings")
+def update_year(yid):
+    y = db.get_or_404(AcademicYear, yid, description="ไม่พบปีการศึกษา")
+    data = request.get_json(silent=True) or {}
+    try:
+        _year_from(y, data)
+    except ValidationError as e:
+        return error(str(e), 422)
+    if parse_bool(data.get("is_current", False)):
+        _set_current(y)
+    return _commit("มีปีการศึกษานี้อยู่แล้ว") or jsonify({"success": True, "message": "บันทึกแล้ว", "item": y.to_dict()})
+
+
+@bp.post("/years/<int:yid>/set-current")
+@permission_required("settings")
+def set_current_year(yid):
+    y = db.get_or_404(AcademicYear, yid, description="ไม่พบปีการศึกษา")
+    _set_current(y)
+    db.session.commit()
+    return jsonify({"success": True, "message": f"ตั้ง {y.name} เป็นปีการศึกษาปัจจุบันแล้ว"})
+
+
+@bp.delete("/years/<int:yid>")
+@permission_required("settings")
+def delete_year(yid):
+    y = db.get_or_404(AcademicYear, yid, description="ไม่พบปีการศึกษา")
+    used = Member.query.filter_by(academic_year_id=yid).count() + MemberPosition.query.filter_by(academic_year_id=yid).count()
+    if used:
+        return error("ลบไม่ได้ เนื่องจากมีสมาชิกหรือประวัติตำแหน่งในปีการศึกษานี้", 409)
+    db.session.delete(y)
+    db.session.commit()
+    return jsonify({"success": True, "message": "ลบปีการศึกษาแล้ว"})
+
+
+# =====================================================================
+# แผนกวิชา
+# =====================================================================
+@bp.get("/departments")
+@login_required
+def list_departments():
+    counts = dict(db.session.query(Member.department_id, func.count(Member.id)).group_by(Member.department_id).all())
+    items = [{**d.to_dict(), "member_count": counts.get(d.id, 0)} for d in Department.query.order_by(Department.name)]
+    return jsonify({"success": True, "items": items})
+
+
+def _dept_from(d: Department, data):
+    name = clean_str(data.get("name"), 120)
+    if not name:
+        raise ValidationError({"name": "กรุณากรอกชื่อแผนกวิชา"})
+    d.name = name
+    d.code = clean_str(data.get("code"), 20)
+
+
+@bp.post("/departments")
+@permission_required("settings")
+def create_department():
+    d = Department()
+    try:
+        _dept_from(d, request.get_json(silent=True) or {})
+    except ValidationError as e:
+        return error(str(e), 422)
+    db.session.add(d)
+    return _commit("ชื่อหรือรหัสแผนกวิชาซ้ำ") or (jsonify({"success": True, "message": "เพิ่มแผนกวิชาแล้ว",
+                                                          "item": d.to_dict()}), 201)
+
+
+@bp.put("/departments/<int:did>")
+@permission_required("settings")
+def update_department(did):
+    d = db.get_or_404(Department, did, description="ไม่พบแผนกวิชา")
+    try:
+        _dept_from(d, request.get_json(silent=True) or {})
+    except ValidationError as e:
+        return error(str(e), 422)
+    return _commit("ชื่อหรือรหัสแผนกวิชาซ้ำ") or jsonify({"success": True, "message": "บันทึกแล้ว", "item": d.to_dict()})
+
+
+@bp.delete("/departments/<int:did>")
+@permission_required("settings")
+def delete_department(did):
+    d = db.get_or_404(Department, did, description="ไม่พบแผนกวิชา")
+    used = Member.query.filter_by(department_id=did).count()
+    if used:
+        return error(f"ลบไม่ได้ เนื่องจากมีสมาชิกในแผนกนี้ {used} คน", 409)
+    db.session.delete(d)
+    db.session.commit()
+    return jsonify({"success": True, "message": "ลบแผนกวิชาแล้ว"})

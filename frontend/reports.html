@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>รายงาน | ระบบสมาชิก วิทยาลัยเทคนิคมีนบุรี</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+</head>
+<body>
+  <div class="layout">
+    <aside id="sidebar"></aside>
+    <main class="main">
+      <header id="header"></header>
+      <section class="content">
+        <form class="card" id="reportForm">
+          <div class="card-head">
+            <div class="card-title"><span class="ic" data-icon="report"></span><div>รายงานสมาชิกตามปีและตำแหน่ง<div class="card-sub">เลือกเงื่อนไข แสดงตัวอย่าง แล้วส่งออกเป็น Excel หรือ PDF</div></div></div>
+            <div class="flex">
+              <button type="button" class="btn btn-success" id="btnExcel"></button>
+              <button type="button" class="btn btn-danger" id="btnPdf"></button>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field col-3 half"><label for="r_year">ปีการศึกษา</label><select class="select" id="r_year" name="year_id"></select></div>
+            <div class="field col-3 half"><label for="r_pos">ตำแหน่ง</label><select class="select" id="r_pos" name="position_id"></select></div>
+            <div class="field col-3 half"><label for="r_dept">แผนกวิชา</label><select class="select" id="r_dept" name="department_id"></select></div>
+            <div class="field col-3 half"><label for="r_status">สถานะ</label><select class="select" id="r_status" name="status"></select></div>
+          </div>
+        </form>
+
+        <div class="card">
+          <div class="card-head"><div class="card-title"><span class="ic" data-icon="grid"></span><div>สรุปจำนวนสมาชิก ตำแหน่ง × แผนกวิชา<div class="card-sub" id="sumSub"></div></div></div></div>
+          <div class="table-wrap" id="summary"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div class="card-title"><span class="ic" data-icon="list"></span><div id="rTitle">รายชื่อสมาชิก</div></div></div>
+          <div class="table-wrap" id="preview"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="js/layout.js"></script>
+  <script src="js/reports.js"></script>
+</body>
+</html>

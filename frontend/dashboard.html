@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Dashboard | ระบบสมาชิก วิทยาลัยเทคนิคมีนบุรี</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+</head>
+
+<body>
+  <div class="layout">
+    <aside id="sidebar"></aside>
+    <main class="main">
+      <header id="header"></header>
+      <section class="content">
+        <div class="dash-grid">
+          <!-- คอลัมน์หลัก -->
+          <div class="dash-main">
+            <div class="flex between">
+              <div class="text-muted" id="yearInfo">ภาพรวมข้อมูลสมาชิก</div>
+              <select class="select" id="yearSelect" style="width:auto;min-width:200px;background-color:#fff"
+                aria-label="เลือกปีการศึกษา"></select>
+            </div>
+
+            <div class="grid grid-3" id="stats">
+              <div class="card stat-card">
+                <div class="stat-icon" id="ic1"></div>
+                <div class="stat-value" id="sTotal">–</div>
+                <div class="stat-label">สมาชิกทั้งหมด</div>
+              </div>
+              <div class="card stat-card">
+                <div class="stat-icon" id="ic2"></div>
+                <div class="stat-value" id="sYear">–</div>
+                <div class="stat-label" id="sYearLabel">สมาชิกปีการศึกษาปัจจุบัน</div>
+              </div>
+              <div class="card stat-card">
+                <div class="stat-icon" id="ic3"></div>
+                <div class="stat-value" id="sCommittee">–</div>
+                <div class="stat-label">จำนวนกรรมการ</div>
+              </div>
+            </div>
+
+            <div class="grid grid-2">
+              <div class="card">
+                <div class="card-head">
+                  <div class="card-title">จำนวนสมาชิกแต่ละปีการศึกษา</div>
+                </div>
+                <div class="chart-box"><canvas id="chartYear" role="img"
+                    aria-label="กราฟจำนวนสมาชิกแต่ละปีการศึกษา"></canvas></div>
+              </div>
+              <div class="card">
+                <div class="card-head">
+                  <div class="card-title">จำนวนสมาชิกตามตำแหน่ง</div><span class="card-sub" id="posYear"></span>
+                </div>
+                <div class="chart-box"><canvas id="chartPos" role="img" aria-label="กราฟจำนวนสมาชิกตามตำแหน่ง"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" id="memberTable"></div>
+          </div>
+
+          <!-- คอลัมน์ขวา -->
+          <aside class="dash-side">
+            <div class="alert-card" id="alertCard">
+              <div class="a-icon" id="alertIcon"></div>
+              <h3>สมาชิกที่ข้อมูลยังไม่ครบ</h3>
+              <div class="a-num" id="aIncomplete">–</div>
+              <p id="aText">กำลังตรวจสอบข้อมูล...</p>
+              <a class="btn btn-sm" href="members.html?incomplete=1">ตรวจสอบข้อมูล</a>
+            </div>
+            <div id="posCards" style="display:contents"></div>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/member-table.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+
+</html>

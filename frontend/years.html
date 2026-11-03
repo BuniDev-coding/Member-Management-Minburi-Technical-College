@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>ปีการศึกษา | ระบบสมาชิก วิทยาลัยเทคนิคมีนบุรี</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+</head>
+<body>
+  <div class="layout">
+    <aside id="sidebar"></aside>
+    <main class="main">
+      <header id="header"></header>
+      <section class="content">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="ic" data-icon="calendar"></span><div>ปีการศึกษา<div class="card-sub">เพิ่ม แก้ไข และกำหนดปีการศึกษาปัจจุบัน</div></div></div>
+            <button class="btn btn-primary" id="btnAdd"></button>
+          </div>
+          <div class="table-wrap"><table class="table" style="min-width:720px">
+            <thead><tr><th>ปีการศึกษา</th><th>ระยะเวลา</th><th class="center">สมาชิกในปีนี้</th><th class="center">สมัครใหม่</th><th>สถานะ</th><th></th></tr></thead>
+            <tbody id="yearBody"><tr><td colspan="6"><div class="loading"><span class="spinner"></span></div></td></tr></tbody>
+          </table></div>
+        </div>
+
+        <div class="card" id="yearMembers" hidden>
+          <div class="card-head">
+            <div class="card-title"><span class="ic" data-icon="users"></span><div id="ymTitle"></div></div>
+            <div class="tabs" id="ymTabs"></div>
+          </div>
+          <div id="ymBody"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="js/layout.js"></script>
+  <script src="js/years.js"></script>
+</body>
+</html>

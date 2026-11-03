@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+backend/.venv/
+.venv/
+database/app.db
+database/app.db-journal
+database/backups/*.db
+backend/uploads/*
+!backend/uploads/.gitkeep
+.env

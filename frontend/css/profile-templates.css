@@ -1,0 +1,187 @@
+/* =====================================================================
+   profile-templates.css — รูปแบบการแสดงประวัติสมาชิก 4 แบบ
+   1) .tpl-card       Profile Card
+   2) .tpl-bio        Biography
+   3) .tpl-exec       Executive Profile
+   4) .tpl-port       Portfolio
+   ===================================================================== */
+.profile-stage { animation: pageIn .2s ease-out; }
+.pf-photo { background: var(--primary-soft); color: var(--primary); display: grid; place-items: center; overflow: hidden; font-weight: 700; }
+.pf-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pf-empty { color: var(--muted); font-size: 14px; margin: 0; }
+.pf-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.pf-tag { padding: 3px 10px; border-radius: 6px; background: var(--primary-soft); color: var(--primary-dark); font-size: 13.5px; }
+.pf-box { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+.pf-h { font-size: 16px; color: var(--navy); margin: 0 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-soft); display: flex; align-items: center; gap: 8px; }
+.pf-h svg { width: 17px; height: 17px; color: var(--primary); }
+
+/* =====================================================================
+   1) PROFILE CARD — รูปภาพ ชื่อ และตำแหน่ง
+   ===================================================================== */
+.tpl-card { display: flex; justify-content: center; padding: 6px 0 24px; }
+.tpl-card .pc { width: 100%; max-width: 380px; text-align: center; overflow: hidden; }
+.tpl-card .pc-cover { height: 124px; background: var(--navy); border-bottom: 4px solid var(--danger); position: relative; }
+.tpl-card .pc-org { position: absolute; top: 12px; line-height: 1.5; left: 12px; right: 12px; color: rgba(255,255,255,.85); font-size: 13px; }
+.tpl-card .pf-photo {
+  width: 132px; height: 132px; border-radius: 50%; margin: -62px auto 0; position: relative;
+  border: 5px solid #fff; box-shadow: 0 2px 8px rgba(16,24,40,.12); font-size: 48px; margin-top: -58px;
+}
+.tpl-card .pc-body { padding: 14px 24px 24px; }
+.tpl-card h2 { font-size: 22px; color: var(--text); }
+.tpl-card .pc-en { color: var(--muted); font-size: 14px; margin-bottom: 12px; }
+.tpl-card .pc-pos { display: inline-block; padding: 5px 18px; border-radius: 6px; color: #fff; font-weight: 600; font-size: 15px; }
+.tpl-card .pc-year { margin-top: 6px; color: var(--muted); font-size: 13px; }
+.tpl-card .pc-info { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--border); border-radius: 8px; margin-top: 18px; text-align: left; }
+.tpl-card .pc-info div { padding: 10px 12px; border-bottom: 1px solid var(--border-soft); }
+.tpl-card .pc-info div:nth-child(odd) { border-right: 1px solid var(--border-soft); }
+.tpl-card .pc-info div:nth-last-child(-n+2) { border-bottom: 0; }
+.tpl-card .pc-info small { display: block; font-size: 12px; color: var(--muted); }
+.tpl-card .pc-info b { font-size: 14px; font-weight: 600; }
+.tpl-card .pc-contact { display: flex; flex-direction: column; gap: 6px; margin-top: 16px; text-align: left; }
+.tpl-card .pc-contact span { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-2); }
+.tpl-card .pc-contact svg { width: 15px; height: 15px; color: var(--primary); flex: 0 0 auto; }
+
+/* =====================================================================
+   2) BIOGRAPHY — รูปภาพพร้อมประวัติส่วนตัว
+   ===================================================================== */
+.tpl-bio { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
+.tpl-bio .bio-side { overflow: hidden; position: sticky; top: 20px; }
+.tpl-bio .pf-photo { width: 100%; aspect-ratio: 3/4; font-size: 84px; border-radius: 0; }
+.tpl-bio .bio-facts { padding: 14px 18px 18px; }
+.tpl-bio .bio-facts .row { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border-soft); font-size: 14px; }
+.tpl-bio .bio-facts .row:last-child { border: 0; }
+.tpl-bio .bio-facts .row span:first-child { color: var(--muted); flex: 0 0 auto; }
+.tpl-bio .bio-facts .row span:last-child { text-align: right; font-weight: 500; word-break: break-word; }
+.tpl-bio .bio-main { padding: 28px 32px; }
+.tpl-bio .bio-kicker { color: var(--primary); font-weight: 600; font-size: 13px; }
+.tpl-bio h2 { font-size: 28px; margin: 4px 0 2px; line-height: 1.3; color: var(--navy); }
+.tpl-bio .bio-sub { color: var(--muted); margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border-soft); }
+.tpl-bio .bio-text { font-size: 16.5px; line-height: 1.9; color: var(--text-2); text-indent: 2.5em; margin: 0 0 8px; }
+.tpl-bio h3 { font-size: 16px; margin: 26px 0 12px; color: var(--navy); }
+.tpl-bio .timeline { border-left: 2px solid var(--primary-line); padding-left: 18px; margin-left: 4px; }
+.tpl-bio .tl-item { position: relative; padding-bottom: 14px; }
+.tpl-bio .tl-item::before { content: ''; position: absolute; left: -24px; top: 7px; width: 10px; height: 10px; border-radius: 50%; background: var(--primary); }
+.tpl-bio .tl-item b { display: block; }
+.tpl-bio .tl-item small { color: var(--muted); }
+
+/* =====================================================================
+   3) EXECUTIVE PROFILE — ประธาน / รองประธาน แบบละเอียด
+   ===================================================================== */
+.tpl-exec { display: flex; flex-direction: column; gap: 20px; }
+.tpl-exec .ex-hero {
+  border-radius: var(--radius); overflow: hidden; color: #fff; padding: 32px 36px;
+  background: var(--navy); border-bottom: 5px solid var(--danger);
+  display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 32px; align-items: center;
+}
+.tpl-exec .pf-photo { width: 190px; height: 236px; border-radius: 8px; font-size: 72px; border: 4px solid #fff; background: #E4EBF8; }
+.tpl-exec .ex-badge {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 6px;
+  background: rgba(255,255,255,.14); color: #fff; font-weight: 600; font-size: 13px;
+}
+.tpl-exec .ex-badge svg { width: 15px; height: 15px; }
+.tpl-exec .ex-hero h2 { font-size: 32px; margin: 12px 0 4px; line-height: 1.25; }
+.tpl-exec .ex-title { font-size: 18px; color: rgba(255,255,255,.88); }
+.tpl-exec .ex-title b { font-weight: 700; color: #fff; }
+.tpl-exec .ex-meta { display: flex; gap: 0; margin-top: 22px; flex-wrap: wrap; border-top: 1px solid rgba(255,255,255,.18); padding-top: 16px; }
+.tpl-exec .ex-meta div { padding-right: 24px; margin-right: 24px; border-right: 1px solid rgba(255,255,255,.18); }
+.tpl-exec .ex-meta div:last-child { border: 0; }
+.tpl-exec .ex-meta small { display: block; font-size: 12.5px; color: rgba(255,255,255,.65); }
+.tpl-exec .ex-meta b { font-size: 16px; font-weight: 600; }
+.tpl-exec .ex-vision {
+  background: #fff; border: 1px solid var(--border); border-left: 4px solid var(--primary); border-radius: var(--radius);
+  padding: 20px 24px; font-size: 18px; line-height: 1.8; color: var(--text);
+}
+.tpl-exec .ex-vision svg { display: none; }
+.tpl-exec .ex-vision small { display: block; font-size: 13px; color: var(--primary); font-weight: 600; margin-bottom: 2px; }
+.tpl-exec .ex-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px; }
+.tpl-exec .ex-col { display: flex; flex-direction: column; gap: 20px; }
+.tpl-exec .ex-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 22px; box-shadow: var(--shadow); }
+.tpl-exec .ex-card h3 { font-size: 16px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-soft); display: flex; align-items: center; gap: 8px; color: var(--navy); }
+.tpl-exec .ex-card h3 .ic { color: var(--primary); display: grid; }
+.tpl-exec .ex-card h3 .ic svg { width: 17px; height: 17px; }
+.tpl-exec .ex-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; }
+.tpl-exec .ex-info small { display: block; color: var(--muted); font-size: 12.5px; }
+.tpl-exec .ex-info b { font-weight: 500; font-size: 15px; word-break: break-word; }
+.tpl-exec .ex-term { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-soft); }
+.tpl-exec .ex-term:last-child { border: 0; }
+.tpl-exec .ex-term .yr { width: 58px; height: 40px; border-radius: 6px; background: var(--primary-soft); color: var(--primary-dark); display: grid; place-items: center; font-weight: 700; flex: 0 0 auto; }
+.tpl-exec .ex-term.exec .yr { background: var(--navy); color: #fff; }
+.tpl-exec .ex-ach { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+.tpl-exec .ex-ach div { padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border); border-left: 3px solid var(--warning); }
+.tpl-exec .ex-ach b { display: block; font-size: 15px; }
+.tpl-exec .ex-ach small { color: var(--muted); }
+.tpl-exec .ex-note { padding: 10px 14px; border-radius: 8px; background: #FFF4E0; color: #8A5300; font-size: 14px; border: 1px solid #F2D7A6; }
+
+/* =====================================================================
+   4) PORTFOLIO — ประวัติ ผลงาน และกิจกรรม
+   ===================================================================== */
+.tpl-port { display: flex; flex-direction: column; gap: 20px; }
+.tpl-port .pt-head { padding: 22px 26px; display: flex; align-items: center; gap: 22px; flex-wrap: wrap; border-top: 4px solid var(--navy); }
+.tpl-port .pf-photo { width: 100px; height: 100px; border-radius: 10px; font-size: 38px; }
+.tpl-port .pt-head h2 { font-size: 25px; color: var(--navy); }
+.tpl-port .pt-head .sub { color: var(--muted); margin-top: 2px; }
+.tpl-port .pt-stats { display: flex; margin-left: auto; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.tpl-port .pt-stats div { min-width: 104px; text-align: center; padding: 10px 14px; border-right: 1px solid var(--border); }
+.tpl-port .pt-stats div:last-child { border: 0; }
+.tpl-port .pt-stats b { display: block; font-size: 24px; color: var(--primary); line-height: 1.2; }
+.tpl-port .pt-stats small { color: var(--muted); font-size: 12.5px; }
+.tpl-port .pt-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 20px; align-items: start; }
+.tpl-port .pt-col { display: flex; flex-direction: column; gap: 20px; }
+.tpl-port .pt-card { padding: 20px 22px; }
+.tpl-port h3 { font-size: 16px; color: var(--navy); margin: 0 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-soft); }
+.tpl-port .pt-about { line-height: 1.85; color: var(--text-2); font-size: 15.5px; margin: 0; }
+.tpl-port .pt-works { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.tpl-port .pt-work { border-radius: 8px; padding: 14px; border: 1px solid var(--border); border-left: 3px solid var(--primary); display: flex; flex-direction: column; gap: 4px; }
+.tpl-port .pt-work.achievement { border-left-color: var(--warning); }
+.tpl-port .pt-work.work { border-left-color: #0F8A78; }
+.tpl-port .pt-work .ic { color: var(--primary); display: flex; align-items: center; gap: 6px; font-size: 12.5px; }
+.tpl-port .pt-work .ic svg { width: 15px; height: 15px; }
+.tpl-port .pt-work.achievement .ic { color: var(--warning); }
+.tpl-port .pt-work.work .ic { color: #0F8A78; }
+.tpl-port .pt-work b { font-size: 15px; line-height: 1.4; }
+.tpl-port .pt-work small { color: var(--muted); font-size: 13px; }
+.tpl-port .pt-work .role { font-size: 13.5px; color: var(--text-2); font-weight: 500; }
+.tpl-port .pt-filter { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.tpl-port .pt-filter button { border: 1px solid var(--border); padding: 5px 12px; border-radius: 6px; background: #fff; color: var(--text-2); font: inherit; font-size: 13.5px; cursor: pointer; }
+.tpl-port .pt-filter button:hover { border-color: var(--primary-line); color: var(--primary); }
+.tpl-port .pt-filter button.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.tpl-port .pt-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+.tpl-port .pt-gallery img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; cursor: zoom-in; border: 1px solid var(--border); }
+.tpl-port .pt-edu div { padding: 8px 0; border-bottom: 1px solid var(--border-soft); font-size: 14px; }
+.tpl-port .pt-edu div:last-child { border: 0; }
+.tpl-port .pt-edu small { color: var(--muted); display: block; }
+
+/* ---- Lightbox ---- */
+.lightbox { position: fixed; inset: 0; background: rgba(10, 15, 30, .88); z-index: 800; display: grid; place-items: center; padding: 30px; cursor: zoom-out; }
+.lightbox img { max-width: 100%; max-height: 90vh; border-radius: 8px; }
+
+/* ---------------------------------------------------------------------
+   Responsive
+   --------------------------------------------------------------------- */
+@media (max-width: 1000px) {
+  .tpl-bio { grid-template-columns: minmax(0, 1fr); }
+  .tpl-bio .bio-side { position: static; display: grid; grid-template-columns: 200px minmax(0, 1fr); }
+  .tpl-exec .ex-grid, .tpl-port .pt-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 768px) {
+  .tpl-exec .ex-hero { grid-template-columns: minmax(0, 1fr); text-align: center; padding: 24px 18px; justify-items: center; }
+  .tpl-exec .pf-photo { width: 150px; height: 186px; }
+  .tpl-exec .ex-hero h2 { font-size: 25px; }
+  .tpl-exec .ex-meta { justify-content: center; gap: 12px 0; }
+  .tpl-exec .ex-meta div { padding-right: 14px; margin-right: 14px; }
+  .tpl-exec .ex-vision { font-size: 16px; }
+  .tpl-bio .bio-main { padding: 20px 18px; }
+  .tpl-bio h2 { font-size: 24px; }
+  .tpl-port .pt-stats { margin-left: 0; width: 100%; }
+  .tpl-port .pt-stats div { flex: 1; min-width: 0; }
+}
+@media (max-width: 560px) {
+  .tpl-bio .bio-side { grid-template-columns: minmax(0, 1fr); }
+  .tpl-exec .ex-info { grid-template-columns: minmax(0, 1fr); }
+  .tpl-card .pc-body { padding: 14px 16px 20px; }
+}
+@media print {
+  .profile-stage { animation: none; }
+  .tpl-exec .ex-hero, .tpl-card .pc-cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .tpl-bio .bio-side { position: static; }
+}

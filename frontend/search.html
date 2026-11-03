@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>สืบค้นข้อมูลสมาชิก | ระบบสมาชิก วิทยาลัยเทคนิคมีนบุรี</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+</head>
+<body>
+  <div class="layout">
+    <aside id="sidebar"></aside>
+    <main class="main">
+      <header id="header"></header>
+      <section class="content">
+        <form class="card" id="searchForm" role="search">
+          <div class="card-head"><div class="card-title"><span class="ic" id="icSearch"></span><div>สืบค้นข้อมูลสมาชิก<div class="card-sub">ค้นหาด้วยชื่อ-นามสกุล เลขสมาชิก ปีการศึกษา หรือตำแหน่ง แล้วกดเปิดดูประวัติ</div></div></div></div>
+          <div class="form-grid">
+            <div class="field col-4"><label for="s_name">ชื่อ - นามสกุล</label><input class="input" id="s_name" name="name" placeholder="เช่น ธนพล ใจดี"></div>
+            <div class="field col-2 half"><label for="s_no">เลขสมาชิก</label><input class="input mono" id="s_no" name="member_no" inputmode="numeric" maxlength="10" placeholder="10 หลัก"></div>
+            <div class="field col-2 half"><label for="s_year">ปีการศึกษา</label><select class="select" id="s_year" name="year_id"></select></div>
+            <div class="field col-2 half"><label for="s_pos">ตำแหน่ง</label><select class="select" id="s_pos" name="position_id"></select></div>
+            <div class="field col-2 half"><label for="s_dept">แผนกวิชา</label><select class="select" id="s_dept" name="department_id"></select></div>
+          </div>
+          <div class="flex" style="margin-top:18px;justify-content:flex-end">
+            <button type="reset" class="btn btn-light" id="btnReset">ล้างค่า</button>
+            <button type="submit" class="btn btn-primary" id="btnSearch">ค้นหา</button>
+          </div>
+        </form>
+
+        <div class="flex between">
+          <div id="resultInfo" class="text-muted">กรอกเงื่อนไขแล้วกด "ค้นหา" หรือดูรายชื่อทั้งหมดด้านล่าง</div>
+          <div class="tabs" role="tablist" aria-label="รูปแบบผลการค้นหา">
+            <button class="tab active" data-view="grid" id="vGrid"></button>
+            <button class="tab" data-view="list" id="vList"></button>
+          </div>
+        </div>
+        <div id="results"></div>
+        <div class="flex" style="justify-content:center"><button class="btn btn-light" id="btnMore" hidden>แสดงเพิ่มเติม</button></div>
+      </section>
+    </main>
+  </div>
+  <script src="js/layout.js"></script>
+  <script src="js/search.js"></script>
+</body>
+</html>

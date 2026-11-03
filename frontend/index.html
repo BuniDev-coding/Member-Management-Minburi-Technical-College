@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>เข้าสู่ระบบ | ระบบบริหารจัดการสมาชิก วิทยาลัยเทคนิคมีนบุรี</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="stylesheet" href="css/style.css">
+  <script>window.PUBLIC_PAGE = true;</script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+</head>
+
+<body>
+  <div class="login-page">
+    <div class="login-shell">
+      <div class="login-art">
+        <span class="circle" style="width:320px;height:320px;right:-120px;top:-110px"></span>
+        <span class="circle" style="width:200px;height:200px;left:-70px;bottom:-60px"></span>
+        <span class="circle" style="width:90px;height:90px;right:60px;bottom:120px"></span>
+        <div>
+          <div class="logo"><img src="img/logo.png" alt="ตราวิทยาลัยเทคนิคมีนบุรี"></div>
+          <h1>ระบบบริหารจัดการสมาชิก<br>วิทยาลัยเทคนิคมีนบุรี</h1>
+          <p>วิทยาลัยเทคนิคมีนบุรี — สำหรับเจ้าหน้าที่ผู้ได้รับสิทธิ์เท่านั้น</p>
+        </div>
+        <div class="feat" id="feat"></div>
+      </div>
+
+      <div class="login-form"> 
+        <h2>เข้าสู่ระบบ</h2>
+        <p class="sub">กรุณากรอกชื่อผู้ใช้และรหัสผ่านเพื่อเข้าใช้งาน</p>
+        <form id="loginForm" novalidate>
+          <div id="loginMsg" hidden></div>
+          <div class="field">
+            <label for="username">ชื่อผู้ใช้</label>
+            <div class="input-icon" id="iUser">
+              <input class="input" id="username" name="username" autocomplete="username" placeholder="ชื่อผู้ใช้"
+                required>
+            </div>
+          </div>
+          <div class="field">
+            <label for="password">รหัสผ่าน</label>
+            <div class="input-icon" id="iPass">
+              <input class="input" id="password" name="password" type="password" autocomplete="current-password"
+                placeholder="รหัสผ่าน" required>
+              <button type="button" class="icon-btn sm toggle-pass" id="togglePass" aria-label="แสดงรหัสผ่าน"></button>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-block" type="submit" id="btnLogin">เข้าสู่ระบบ</button>
+        </form>
+        <div class="login-foot">ระบบภายในสำหรับเจ้าหน้าที่ · ข้อมูลสมาชิกไม่มีการเผยแพร่สู่สาธารณะ</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/layout.js"></script>
+  <script src="js/login.js"></script>
+</body>
+
+</html>
