@@ -41,8 +41,9 @@ def create_app(config_class=Config):
     from routes.users import bp as users_bp
     from routes.backup import bp as backup_bp
     from routes.files import bp as files_bp
+    from routes.address import bp as address_bp
 
-    for bp in (auth_bp, dashboard_bp, members_bp, settings_bp, reports_bp, users_bp, backup_bp, files_bp):
+    for bp in (auth_bp, dashboard_bp, members_bp, settings_bp, reports_bp, users_bp, backup_bp, files_bp, address_bp):
         app.register_blueprint(bp)
 
     # ---- สร้างตารางอัตโนมัติเมื่อรันครั้งแรก ----------------------------

@@ -21,7 +21,7 @@ from sqlalchemy import or_, func
 from sqlalchemy.exc import IntegrityError
 
 from models import (db, Member, MemberPosition, MemberEducation, MemberActivity, MemberImage,
-                    AcademicYear, Position, Department, STATUSES, TEMPLATES, EDUCATION_LEVELS)
+                    AcademicYear, Position, Department, Province, District, Subdistrict, STATUSES, TEMPLATES, EDUCATION_LEVELS)
 from models.member import ACTIVITY_CATEGORIES
 from utils.auth import error, permission_required
 from utils.files import save_image, delete_file
@@ -187,9 +187,14 @@ SIMPLE_FIELDS = {
     # field: max_len
     "prefix": 20, "first_name": 100, "last_name": 100, "first_name_en": 100, "last_name_en": 100,
     "nickname": 50, "gender": 10, "nationality": 50, "religion": 50, "blood_type": 5,
-    "email": 120, "line_id": 50, "facebook": 120, "address": None, "parent_name": 150,
+    "email": 120, "line_id": 50, "facebook": 120, "parent_name": 150,
+    "house_no": 50, "moo": 10, "village": 120, "soi": 100, "road": 100,
     "class_group": 20, "biography": None, "skills": None, "vision": None, "note": None,
 }
+
+
+ADDRESS_KEYS = ("house_no", "moo", "village", "soi", "road", "province_id", "district_id", "subdistrict_id",
+                "postal_code")
 
 
 def _apply(member: Member, data: dict, is_new: bool):
@@ -229,6 +234,29 @@ def _apply(member: Member, data: dict, is_new: bool):
             setattr(member, f, clean_digits(data.get(f)))
     if member.national_id and (len(member.national_id) != 13 or not member.national_id.isdigit()):
         errors["national_id"] = "เลขประจำตัวประชาชนต้องเป็นตัวเลข 13 หลัก"
+
+    # ---- ที่อยู่: จังหวัด → อำเภอ/เขต → ตำบล/แขวง ต้องสัมพันธ์กัน ----
+    if any(k in data for k in ("province_id", "district_id", "subdistrict_id", "postal_code")) or is_new:
+        pv = db.session.get(Province, parse_int(data.get("province_id")) or 0)
+        ds = db.session.get(District, parse_int(data.get("district_id")) or 0)
+        sd = db.session.get(Subdistrict, parse_int(data.get("subdistrict_id")) or 0)
+        if sd and not ds:
+            ds = sd.district
+        if ds and not pv:
+            pv = ds.province
+        if ds and ds.province_id != pv.id:
+            errors["district_id"] = "อำเภอ/เขต ไม่อยู่ในจังหวัดที่เลือก"
+        if sd and ds and sd.district_id != ds.id:
+            errors["subdistrict_id"] = "ตำบล/แขวง ไม่อยู่ในอำเภอ/เขตที่เลือก"
+        member.province, member.district, member.subdistrict = pv, ds, sd
+        member.province_id, member.district_id, member.subdistrict_id = (
+            pv.id if pv else None, ds.id if ds else None, sd.id if sd else None)
+        zipc = clean_digits(data.get("postal_code"))
+        if zipc and not (len(zipc) == 5 and zipc.isdigit()):
+            errors["postal_code"] = "รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก"
+        member.postal_code = zipc or (sd.postal_code if sd else None)
+    if is_new or any(k in data for k in ADDRESS_KEYS):
+        member.address = member.compose_address()
 
     if "academic_year_id" in data or is_new:
         yid = parse_int(data.get("academic_year_id"))

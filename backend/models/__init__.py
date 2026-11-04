@@ -17,6 +17,7 @@ def _sqlite_pragma(dbapi_connection, connection_record):
 
 from .user import User, ROLE_PERMISSIONS, ALL_PERMISSIONS  # noqa: E402,F401
 from .lookup import AcademicYear, Department, Position  # noqa: E402,F401
+from .address import Province, District, Subdistrict  # noqa: E402,F401
 from .member import (  # noqa: E402,F401
     Member, MemberPosition, MemberEducation, MemberActivity, MemberImage,
     STATUSES, TEMPLATES, EDUCATION_LEVELS,

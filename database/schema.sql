@@ -67,6 +67,34 @@ CREATE TABLE IF NOT EXISTS positions (
 );
 
 -- ---------------------------------------------------------------------
+-- 4.1) ข้อมูลที่อยู่ประเทศไทย (นำเข้าอัตโนมัติจาก backend/data/thai_address.json)
+--      77 จังหวัด / 930 อำเภอ-เขต / 7,436 ตำบล-แขวง พร้อมรหัสไปรษณีย์
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS provinces (
+    id              INTEGER PRIMARY KEY,                -- รหัสจังหวัด
+    name_th         VARCHAR(100) NOT NULL,
+    name_en         VARCHAR(100)
+);
+CREATE TABLE IF NOT EXISTS districts (
+    id              INTEGER PRIMARY KEY,                -- รหัสอำเภอ/เขต
+    province_id     INTEGER      NOT NULL REFERENCES provinces(id) ON DELETE CASCADE,
+    name_th         VARCHAR(100) NOT NULL,
+    name_en         VARCHAR(100),
+    prefix          VARCHAR(20)                         -- อำเภอ / เขต
+);
+CREATE INDEX IF NOT EXISTS ix_districts_province ON districts(province_id);
+CREATE TABLE IF NOT EXISTS subdistricts (
+    id              INTEGER PRIMARY KEY,                -- รหัสตำบล/แขวง
+    district_id     INTEGER      NOT NULL REFERENCES districts(id) ON DELETE CASCADE,
+    name_th         VARCHAR(100) NOT NULL,
+    name_en         VARCHAR(100),
+    prefix          VARCHAR(20),                        -- ตำบล / แขวง
+    postal_code     CHAR(5)      NOT NULL               -- รหัสไปรษณีย์
+);
+CREATE INDEX IF NOT EXISTS ix_subdistricts_district ON subdistricts(district_id);
+CREATE INDEX IF NOT EXISTS ix_subdistricts_postal   ON subdistricts(postal_code);
+
+-- ---------------------------------------------------------------------
 -- 5) สมาชิก  (อ้างอิงฟอร์มใบสมัครสมาชิกองค์การนักวิชาชีพแห่งประเทศไทย)
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS members (
@@ -103,7 +131,16 @@ CREATE TABLE IF NOT EXISTS members (
     email               VARCHAR(120),
     line_id             VARCHAR(50),
     facebook            VARCHAR(120),
-    address             TEXT,
+    address             TEXT,                           -- ที่อยู่เต็ม (ระบบประกอบจากช่องด้านล่าง)
+    house_no            VARCHAR(50),                    -- บ้านเลขที่
+    moo                 VARCHAR(10),                    -- หมู่ที่
+    village             VARCHAR(120),                   -- หมู่บ้าน / อาคาร
+    soi                 VARCHAR(100),                   -- ซอย
+    road                VARCHAR(100),                   -- ถนน
+    province_id         INTEGER      REFERENCES provinces(id)    ON DELETE SET NULL,
+    district_id         INTEGER      REFERENCES districts(id)    ON DELETE SET NULL,
+    subdistrict_id      INTEGER      REFERENCES subdistricts(id) ON DELETE SET NULL,
+    postal_code         CHAR(5),                        -- รหัสไปรษณีย์
     parent_name         VARCHAR(150),
     parent_phone        VARCHAR(20),
     -- ประวัติบุคคล

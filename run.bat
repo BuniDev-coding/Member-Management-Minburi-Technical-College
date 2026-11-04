@@ -3,18 +3,14 @@ chcp 65001 >nul
 cd /d "%~dp0"
 
 if not exist "backend\.venv\Scripts\python.exe" (
-  echo [1/3] Creating virtual environment...
+  echo [1/2] Creating virtual environment...
   python -m venv backend\.venv || goto :error
 )
 
-echo [2/3] Checking packages...
+echo [2/2] Checking packages...
 backend\.venv\Scripts\python -m pip install -q -r backend\requirements.txt || goto :error
 
-rem ไฟล์ตั้งค่า .env จะถูกสร้างจาก .env.example อัตโนมัติเมื่อรันครั้งแรก
-if not exist "database\app.db" (
-  echo [3/3] Creating database with sample data...
-  backend\.venv\Scripts\python database\seed.py || goto :error
-)
+rem ไฟล์ตั้งค่า .env และฐานข้อมูล (พร้อมข้อมูลจังหวัด/อำเภอ/ตำบล) จะถูกสร้างอัตโนมัติเมื่อรันครั้งแรก
 
 echo.
 echo   Settings: .env    Open http://127.0.0.1:5000   (admin / admin1234)

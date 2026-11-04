@@ -11,6 +11,11 @@ erDiagram
     members ||--o{ member_educations : "ประวัติการศึกษา"
     members ||--o{ member_activities : "ผลงาน/กิจกรรม/การทำงาน"
     members ||--o{ member_images : "รูปภาพประกอบ"
+    provinces ||--o{ districts : "อำเภอ/เขต"
+    districts ||--o{ subdistricts : "ตำบล/แขวง"
+    provinces ||--o{ members : "จังหวัด"
+    districts ||--o{ members : "อำเภอ/เขต"
+    subdistricts ||--o{ members : "ตำบล/แขวง"
 
     users {
         int id PK
@@ -59,6 +64,33 @@ erDiagram
         varchar phone
         text biography
         text skills
+        varchar house_no "บ้านเลขที่"
+        varchar moo "หมู่ที่"
+        varchar soi
+        varchar road
+        int province_id FK
+        int district_id FK
+        int subdistrict_id FK
+        char postal_code "5 หลัก"
+        text address "ประกอบอัตโนมัติ"
+    }
+    provinces {
+        int id PK
+        varchar name_th
+        varchar name_en
+    }
+    districts {
+        int id PK
+        int province_id FK
+        varchar name_th
+        varchar prefix "อำเภอ|เขต"
+    }
+    subdistricts {
+        int id PK
+        int district_id FK
+        varchar name_th
+        varchar prefix "ตำบล|แขวง"
+        char postal_code
     }
     member_positions {
         int id PK

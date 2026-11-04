@@ -85,7 +85,21 @@
           ${field('email', 'อีเมล', { type: 'email', col: 'col-4' })}
           ${field('line_id', 'LINE ID', { col: 'col-2' })}
           ${field('facebook', 'Facebook', { col: 'col-2' })}
-          <div class="field col-12"><label for="f_address">ที่อยู่ปัจจุบัน</label><textarea class="textarea" id="f_address" name="address" rows="2" style="min-height:70px">${esc(v('address'))}</textarea></div>
+        </div>
+        <h4 style="margin:26px 0 14px;font-size:15px;color:var(--text-2)">ที่อยู่ปัจจุบัน</h4>
+        <div class="form-grid">
+          ${field('house_no', 'บ้านเลขที่', { col: 'col-2', attrs: 'maxlength="50" placeholder="เช่น 12/3"' })}
+          ${field('moo', 'หมู่ที่', { col: 'col-2', attrs: 'inputmode="numeric" maxlength="10"' })}
+          ${field('village', 'หมู่บ้าน / อาคาร', { col: 'col-4', attrs: 'maxlength="120"' })}
+          ${field('soi', 'ซอย', { col: 'col-2', attrs: 'maxlength="100"' })}
+          ${field('road', 'ถนน', { col: 'col-2', attrs: 'maxlength="100"' })}
+          ${select('province_id', 'จังหวัด', '<option value="">กำลังโหลด...</option>', { col: 'col-3' })}
+          ${select('district_id', 'อำเภอ / เขต', '<option value="">-- เลือกจังหวัดก่อน --</option>', { col: 'col-3' })}
+          ${select('subdistrict_id', 'ตำบล / แขวง', '<option value="">-- เลือกอำเภอ/เขตก่อน --</option>', { col: 'col-3' })}
+          ${field('postal_code', 'รหัสไปรษณีย์', { col: 'col-3', attrs: 'inputmode="numeric" maxlength="5" autocomplete="off"', hint: 'เลือกอำเภอ/ตำบลแล้วจะขึ้นอัตโนมัติ หรือพิมพ์รหัสเพื่อค้นหา' })}
+        </div>
+        <h4 style="margin:26px 0 14px;font-size:15px;color:var(--text-2)">ผู้ปกครอง</h4>
+        <div class="form-grid">
           ${field('parent_name', 'ชื่อผู้ปกครอง', { col: 'col-6' })}
           ${field('parent_phone', 'เบอร์โทรผู้ปกครอง', { type: 'tel', col: 'col-6', attrs: 'inputmode="tel" maxlength="12"' })}
         </div>
@@ -159,8 +173,126 @@
     ['edu', 'act'].forEach(updateEmpty);
     renderGallery();
     bind();
+    Address.init();
     if (isEdit) checkNumber();
   }
+
+  // ---------------------------------------------------------------------
+  // ที่อยู่: จังหวัด → อำเภอ/เขต → ตำบล/แขวง → รหัสไปรษณีย์ (ดึงจากตารางในฐานข้อมูล)
+  // ---------------------------------------------------------------------
+  const Address = (() => {
+    const cache = { districts: {}, subdistricts: {} };
+    let districts = [], subdistricts = [];
+    const el = (n) => form[n];
+    const label = (n, text) => { const l = form.querySelector(`label[for="f_${n}"]`); if (l) l.textContent = text; };
+    const zipHint = (text, state = '') => {
+      const h = form.querySelector('[data-hint="postal_code"]');
+      h.className = 'hint' + (state ? ' ' + state : ''); h.textContent = text;
+    };
+    const DEFAULT_HINT = 'เลือกอำเภอ/ตำบลแล้วจะขึ้นอัตโนมัติ หรือพิมพ์รหัสเพื่อค้นหา';
+
+    async function loadDistricts(pid) {
+      if (!pid) return [];
+      if (!cache.districts[pid]) cache.districts[pid] = API.get('/api/address/districts', { province_id: pid }).then(r => r.items);
+      return cache.districts[pid];
+    }
+    async function loadSubdistricts(did) {
+      if (!did) return [];
+      if (!cache.subdistricts[did]) cache.subdistricts[did] = API.get('/api/address/subdistricts', { district_id: did }).then(r => r.items);
+      return cache.subdistricts[did];
+    }
+    const withPrefix = (o) => o.name;
+
+    function setLabels() {
+      const bkk = (el('province_id').selectedOptions[0] || {}).text === 'กรุงเทพมหานคร';
+      label('district_id', bkk ? 'เขต' : 'อำเภอ');
+      label('subdistrict_id', bkk ? 'แขวง' : 'ตำบล');
+    }
+
+    async function fillDistricts(pid, selected) {
+      districts = await loadDistricts(pid);
+      el('district_id').innerHTML = pid
+        ? options(districts, { label: withPrefix, selected, placeholder: '-- เลือกอำเภอ/เขต --' })
+        : '<option value="">-- เลือกจังหวัดก่อน --</option>';
+      setLabels();
+    }
+    async function fillSubdistricts(did, selected) {
+      subdistricts = await loadSubdistricts(did);
+      el('subdistrict_id').innerHTML = did
+        ? options(subdistricts, { label: withPrefix, selected, placeholder: '-- เลือกตำบล/แขวง --' })
+        : '<option value="">-- เลือกอำเภอ/เขตก่อน --</option>';
+    }
+
+    /** ตั้งรหัสไปรษณีย์จากอำเภอ/ตำบลที่เลือก */
+    function autoZip() {
+      const sd = subdistricts.find(s => String(s.id) === el('subdistrict_id').value);
+      if (sd) { el('postal_code').value = sd.postal_code; zipHint('✓ รหัสไปรษณีย์ของ' + (sd.prefix || '') + sd.name, 'ok'); return; }
+      const ds = districts.find(d => String(d.id) === el('district_id').value);
+      if (!ds) { el('postal_code').value = ''; zipHint(DEFAULT_HINT); return; }
+      if (ds.postal_codes.length === 1) {
+        el('postal_code').value = ds.postal_codes[0];
+        zipHint('✓ รหัสไปรษณีย์ของ' + (ds.prefix || '') + ds.name, 'ok');
+      } else {
+        el('postal_code').value = ds.postal_codes[0] || '';
+        zipHint(`${ds.prefix || ''}${ds.name} มี ${ds.postal_codes.length} รหัส (${ds.postal_codes.join(', ')}) — เลือกตำบล/แขวงเพื่อระบุให้ตรง`);
+      }
+    }
+
+    /** พิมพ์รหัสไปรษณีย์ครบ 5 หลัก → เลือกจังหวัด/อำเภอ/ตำบลให้อัตโนมัติ */
+    async function fromZip() {
+      const code = el('postal_code').value;
+      if (!/^\d{5}$/.test(code)) { zipHint(code ? 'รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก' : DEFAULT_HINT, code ? 'error' : ''); return; }
+      const cur = subdistricts.find(s => String(s.id) === el('subdistrict_id').value);
+      if (cur && cur.postal_code === code) return;
+      let items;
+      try { items = (await API.get('/api/address/postal/' + code)).items; } catch (e) { return zipHint(e.message, 'error'); }
+      if (el('postal_code').value !== code) return;   // ผู้ใช้พิมพ์ต่อแล้ว
+      if (!items.length) return zipHint('ไม่พบรหัสไปรษณีย์นี้ในฐานข้อมูล', 'error');
+      const provinces = [...new Set(items.map(i => i.province_id))];
+      const dists = [...new Set(items.map(i => i.district_id))];
+      if (provinces.length === 1) {
+        el('province_id').value = provinces[0];
+        await fillDistricts(provinces[0], dists.length === 1 ? dists[0] : '');
+        if (dists.length === 1) {
+          await fillSubdistricts(dists[0], items.length === 1 ? items[0].subdistrict_id : '');
+        } else {
+          await fillSubdistricts('');
+        }
+      }
+      const names = [...new Set(items.map(i => (i.district_prefix || '') + i.district + ' ' + i.province))];
+      zipHint(items.length === 1 ? `✓ ${items[0].subdistrict_prefix || ''}${items[0].subdistrict} ${names[0]}`
+        : `พบ ${items.length} ตำบล/แขวง ใน ${names.join(', ')} — กรุณาเลือกให้ตรง`, items.length === 1 ? 'ok' : '');
+    }
+
+    async function init() {
+      try {
+        const provinces = (await API.get('/api/address/provinces')).items;
+        el('province_id').innerHTML = options(provinces, { selected: v('province_id'), placeholder: '-- เลือกจังหวัด --' });
+        await fillDistricts(v('province_id'), v('district_id'));
+        await fillSubdistricts(v('district_id'), v('subdistrict_id'));
+        if (!member || !member.postal_code) autoZip();
+      } catch (e) {
+        el('province_id').innerHTML = '<option value="">โหลดข้อมูลจังหวัดไม่สำเร็จ</option>';
+        toast(e.message, 'error');
+      }
+      el('province_id').addEventListener('change', async (e) => {
+        await fillDistricts(e.target.value, '');
+        await fillSubdistricts('');
+        autoZip();
+      });
+      el('district_id').addEventListener('change', async (e) => {
+        await fillSubdistricts(e.target.value, '');
+        autoZip();
+      });
+      el('subdistrict_id').addEventListener('change', autoZip);
+      const debouncedZip = debounce(fromZip, 300);
+      el('postal_code').addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/\D/g, '').slice(0, 5);
+        debouncedZip();
+      });
+    }
+    return { init };
+  })();
 
   // ---------------------------------------------------------------------
   // แถวข้อมูล: ตำแหน่ง / การศึกษา / ผลงาน
@@ -328,6 +460,8 @@
     if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) errors.email = 'รูปแบบอีเมลไม่ถูกต้อง';
     const phone = form.phone.value.trim();
     if (phone && !/^0\d{8,9}$/.test(phone)) errors.phone = 'เบอร์โทรศัพท์ต้องขึ้นต้นด้วย 0 และมี 9-10 หลัก';
+    const zip = form.postal_code.value.trim();
+    if (zip && !/^\d{5}$/.test(zip)) errors.postal_code = 'รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก';
     const years = collect('pos').filter(p => p.academic_year_id && p.position_id).map(p => p.academic_year_id);
     if (new Set(years).size !== years.length) errors._pos = 'ในหนึ่งปีการศึกษาดำรงตำแหน่งได้เพียง 1 ตำแหน่ง';
     return errors;

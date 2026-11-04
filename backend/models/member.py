@@ -48,7 +48,16 @@ class Member(db.Model):
     email = db.Column(db.String(120))
     line_id = db.Column(db.String(50))
     facebook = db.Column(db.String(120))
-    address = db.Column(db.Text)
+    address = db.Column(db.Text)              # ที่อยู่เต็ม (ระบบประกอบจากช่องด้านล่างอัตโนมัติ)
+    house_no = db.Column(db.String(50))       # บ้านเลขที่
+    moo = db.Column(db.String(10))            # หมู่ที่
+    village = db.Column(db.String(120))       # หมู่บ้าน / อาคาร
+    soi = db.Column(db.String(100))           # ซอย
+    road = db.Column(db.String(100))          # ถนน
+    province_id = db.Column(db.Integer, db.ForeignKey("provinces.id", ondelete="SET NULL"))
+    district_id = db.Column(db.Integer, db.ForeignKey("districts.id", ondelete="SET NULL"))
+    subdistrict_id = db.Column(db.Integer, db.ForeignKey("subdistricts.id", ondelete="SET NULL"))
+    postal_code = db.Column(db.String(5))
     parent_name = db.Column(db.String(150))
     parent_phone = db.Column(db.String(20))
     # ประวัติบุคคล
@@ -62,6 +71,9 @@ class Member(db.Model):
 
     academic_year = db.relationship("AcademicYear", lazy="joined")
     department = db.relationship("Department", lazy="joined")
+    province = db.relationship("Province")
+    district = db.relationship("District")
+    subdistrict = db.relationship("Subdistrict")
     positions = db.relationship("MemberPosition", back_populates="member", cascade="all, delete-orphan",
                                 passive_deletes=True, lazy="selectin")
     educations = db.relationship("MemberEducation", cascade="all, delete-orphan", passive_deletes=True,
@@ -82,6 +94,26 @@ class Member(db.Model):
     @property
     def full_name(self):
         return f"{self.prefix or ''}{self.first_name} {self.last_name}".strip()
+
+    def compose_address(self):
+        """ประกอบที่อยู่เต็มจากช่องย่อย เช่น 12/3 หมู่ 4 ซอยสุขใจ ถนนสีหบุรานุกิจ แขวงมีนบุรี เขตมีนบุรี กรุงเทพมหานคร 10510"""
+        def pre(word, val):
+            if not val or val.startswith(word):
+                return val
+            return f"{word} {val}" if val[0].isdigit() else f"{word}{val}"
+        bkk = self.province and self.province.name_th == "กรุงเทพมหานคร"
+        parts = [
+            self.house_no,
+            f"หมู่ {self.moo}" if self.moo else None,
+            self.village,
+            pre("ซอย", self.soi),
+            pre("ถนน", self.road),
+            f"{self.subdistrict.prefix or ''}{self.subdistrict.name_th}" if self.subdistrict else None,
+            f"{self.district.prefix or ''}{self.district.name_th}" if self.district else None,
+            (self.province.name_th if bkk else f"จังหวัด{self.province.name_th}") if self.province else None,
+            self.postal_code,
+        ]
+        return " ".join(p for p in parts if p) or None
 
     def sorted_positions(self):
         return sorted(self.positions, key=lambda p: (p.academic_year.year if p.academic_year else 0), reverse=True)
@@ -150,6 +182,20 @@ class Member(db.Model):
             "line_id": self.line_id,
             "facebook": self.facebook,
             "address": self.address,
+            "house_no": self.house_no,
+            "moo": self.moo,
+            "village": self.village,
+            "soi": self.soi,
+            "road": self.road,
+            "province_id": self.province_id,
+            "province": self.province.name_th if self.province else None,
+            "district_id": self.district_id,
+            "district": self.district.name_th if self.district else None,
+            "district_prefix": self.district.prefix if self.district else None,
+            "subdistrict_id": self.subdistrict_id,
+            "subdistrict": self.subdistrict.name_th if self.subdistrict else None,
+            "subdistrict_prefix": self.subdistrict.prefix if self.subdistrict else None,
+            "postal_code": self.postal_code,
             "parent_name": self.parent_name,
             "parent_phone": self.parent_phone,
             "biography": self.biography,

@@ -8,3 +8,4 @@ database/backups/*.db
 backend/uploads/*
 !backend/uploads/.gitkeep
 .env
+database/backups/*.rar
