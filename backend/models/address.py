@@ -2,10 +2,10 @@
 
 ข้อมูลตั้งต้นอยู่ที่ backend/data/thai_address.json และถูกนำเข้าอัตโนมัติตอนเริ่มระบบ (seed_defaults.py)
 """
-from . import db
+from . import db, BaseModel
 
 
-class Province(db.Model):
+class Province(BaseModel):
     __tablename__ = "provinces"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=False)
@@ -16,7 +16,7 @@ class Province(db.Model):
         return {"id": self.id, "name": self.name_th, "name_en": self.name_en}
 
 
-class District(db.Model):
+class District(BaseModel):
     """อำเภอ (ต่างจังหวัด) / เขต (กรุงเทพมหานคร)"""
     __tablename__ = "districts"
 
@@ -33,7 +33,7 @@ class District(db.Model):
                 "name_en": self.name_en, "prefix": self.prefix}
 
 
-class Subdistrict(db.Model):
+class Subdistrict(BaseModel):
     """ตำบล (ต่างจังหวัด) / แขวง (กรุงเทพมหานคร)"""
     __tablename__ = "subdistricts"
 

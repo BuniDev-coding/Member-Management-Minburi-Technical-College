@@ -1,8 +1,22 @@
+from typing import TYPE_CHECKING, Any
+
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
 
 db = SQLAlchemy()
+
+if TYPE_CHECKING:
+    # สำหรับตัวตรวจโค้ด (Pylance/Pyrefly) เท่านั้น: บอกว่าโมเดลรับ keyword เช่น Member(first_name=...) ได้
+    # ตอนรันจริงใช้ db.Model ตามปกติ
+    class BaseModel:
+        query: Any
+        __table__: Any
+        __tablename__: str
+
+        def __init__(self, **kwargs: Any) -> None: ...
+else:
+    BaseModel = db.Model
 
 
 @event.listens_for(Engine, "connect")

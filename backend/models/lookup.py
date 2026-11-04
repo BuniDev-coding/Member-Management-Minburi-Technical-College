@@ -1,13 +1,13 @@
 from datetime import datetime
 
-from . import db
+from . import db, BaseModel
 
 
 def _d(v):
     return v.isoformat() if v else None
 
 
-class AcademicYear(db.Model):
+class AcademicYear(BaseModel):
     __tablename__ = "academic_years"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -32,7 +32,7 @@ class AcademicYear(db.Model):
         }
 
 
-class Department(db.Model):
+class Department(BaseModel):
     __tablename__ = "departments"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -44,7 +44,7 @@ class Department(db.Model):
         return {"id": self.id, "code": self.code, "name": self.name}
 
 
-class Position(db.Model):
+class Position(BaseModel):
     __tablename__ = "positions"
 
     id = db.Column(db.Integer, primary_key=True)

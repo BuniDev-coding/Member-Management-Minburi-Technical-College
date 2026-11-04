@@ -105,32 +105,45 @@ def list_members():
     per_page = min(max(parse_int(args.get("per_page")) or 20, 1), 500)
 
     total = q.order_by(None).count()
+    year_id = parse_int(args.get("year_id"))
+    general = Position.general() if year_id else None
+
+    def year_override(rows):
+        """แสดงตำแหน่งของปีที่ค้นหา (ไม่มีประวัติในปีนั้น = สมาชิกทั่วไป เหมือน Dashboard)"""
+        if not year_id or not rows:
+            return
+        mps = MemberPosition.query.filter(MemberPosition.member_id.in_([r["id"] for r in rows]),
+                                          MemberPosition.academic_year_id == year_id).all()
+        by_member = {mp.member_id: mp.position for mp in mps}
+        for r in rows:
+            pos = by_member.get(r["id"]) or general
+            if pos:
+                r.update(position_id=pos.id, position=pos.name, position_color=pos.color, position_level=pos.level)
+
+    group_counts = None
     if sort in ("position", "department"):
-        # เรียงในหน่วยความจำ (ตำแหน่งคำนวณจากประวัติตำแหน่งล่าสุด)
+        # เรียงในหน่วยความจำ (ตำแหน่งคำนวณจากประวัติตำแหน่งของปีที่เลือก) แล้วจึงแบ่งหน้า
         rows = [m.to_summary() for m in q.all()]
-        key = (lambda r: r["position_level"]) if sort == "position" else (lambda r: r["department"] or "฿")
+        year_override(rows)
+        if sort == "position":
+            key = lambda r: (r["position_level"], r["position"] or "", r["member_no"])
+            gkey = lambda r: r["position"]
+        else:
+            key = lambda r: (r["department"] or "฿", r["member_no"])
+            gkey = lambda r: r["department"] or "ไม่ระบุแผนก"
         rows.sort(key=key, reverse=desc)
+        group_counts = {}
+        for r in rows:
+            group_counts[gkey(r)] = group_counts.get(gkey(r), 0) + 1
         items = rows[(page - 1) * per_page: page * per_page]
     else:
         cols = SORTS.get(sort, SORTS["member_no"])
         q = q.order_by(*[c.desc() if desc else c.asc() for c in cols], Member.id)
         items = [m.to_summary() for m in q.offset((page - 1) * per_page).limit(per_page).all()]
-
-    year_id = parse_int(args.get("year_id"))
-    if year_id:   # แสดงตำแหน่งของปีที่ค้นหา
-        ids = [i["id"] for i in items]
-        if ids:
-            mps = MemberPosition.query.filter(MemberPosition.member_id.in_(ids),
-                                              MemberPosition.academic_year_id == year_id).all()
-            by_member = {mp.member_id: mp for mp in mps}
-            for i in items:
-                mp = by_member.get(i["id"])
-                if mp:
-                    i.update(position_id=mp.position_id, position=mp.position.name,
-                             position_color=mp.position.color, position_level=mp.position.level)
+        year_override(items)
 
     return jsonify({"success": True, "items": items, "total": total, "page": page, "per_page": per_page,
-                    "pages": (total + per_page - 1) // per_page})
+                    "pages": (total + per_page - 1) // per_page, "group_counts": group_counts})
 
 
 @bp.get("/<int:member_id>")
@@ -254,6 +267,12 @@ def _apply(member: Member, data: dict, is_new: bool):
         zipc = clean_digits(data.get("postal_code"))
         if zipc and not (len(zipc) == 5 and zipc.isdigit()):
             errors["postal_code"] = "รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก"
+        elif zipc and ds:
+            valid = {c for (c,) in db.session.query(Subdistrict.postal_code)
+                     .filter(Subdistrict.district_id == ds.id).distinct()}
+            if valid and zipc not in valid:
+                errors["postal_code"] = (f"รหัสไปรษณีย์ไม่ตรงกับ{ds.prefix or ''}{ds.name_th} "
+                                         f"(ใช้ได้: {', '.join(sorted(valid))})")
         member.postal_code = zipc or (sd.postal_code if sd else None)
     if is_new or any(k in data for k in ADDRESS_KEYS):
         member.address = member.compose_address()

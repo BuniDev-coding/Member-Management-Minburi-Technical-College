@@ -2,7 +2,7 @@ from datetime import datetime
 
 import bcrypt
 
-from . import db
+from . import db, BaseModel
 
 # สิทธิ์การเข้าถึงทั้งหมดในระบบ
 ALL_PERMISSIONS = {
@@ -23,7 +23,7 @@ ROLE_PERMISSIONS = {
 }
 
 
-class User(db.Model):
+class User(BaseModel):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)

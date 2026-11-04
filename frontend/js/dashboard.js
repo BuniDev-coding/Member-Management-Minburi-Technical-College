@@ -71,7 +71,8 @@
     Chart.defaults.color = '#6B778C';
     const grid = { color: '#EDF1F6', drawTicks: false };
     const tooltip = { backgroundColor: '#172033', padding: 10, cornerRadius: 10, titleFont: { weight: '600' }, displayColors: false,
-      callbacks: { label: (c) => `${Fmt.number(c.parsed.y ?? c.parsed.x)} คน` } };
+      // แท่งแนวนอน (indexAxis: 'y') ค่าอยู่ที่แกน x — parsed.y คือลำดับแถว ไม่ใช่จำนวน
+      callbacks: { label: (c) => `${Fmt.number(c.chart.options.indexAxis === 'y' ? c.parsed.x : c.parsed.y)} คน` } };
 
     // จำนวนสมาชิกแต่ละปีการศึกษา — ชุดข้อมูลเดียว สีเดียว
     charts.year && charts.year.destroy();

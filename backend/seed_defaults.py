@@ -132,8 +132,11 @@ def parse_legacy_address(addr):
 
 
 def migrate_legacy_addresses():
+    # แปลงเฉพาะที่อยู่แบบข้อความเดิมจริง ๆ = ทุกช่องย่อยยังว่าง (ไม่ทับข้อมูลที่ผู้ใช้กรอกเองบางช่อง)
+    structured = (Member.house_no, Member.moo, Member.village, Member.soi, Member.road, Member.province_id,
+                  Member.district_id, Member.subdistrict_id, Member.postal_code)
     q = Member.query.filter(Member.address.isnot(None), Member.address != "",
-                            Member.province_id.is_(None), Member.house_no.is_(None))
+                            *[c.is_(None) for c in structured])
     changed = 0
     for m in q:
         r = parse_legacy_address(m.address)

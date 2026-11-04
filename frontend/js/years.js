@@ -10,7 +10,7 @@
   btnAdd.hidden = !canEdit;
   btnAdd.addEventListener('click', () => edit());
 
-  let years = [], viewing = null, viewMode = 'position';
+  let years = [], viewing = null, viewMode = 'position', page = 1, perPage = 50;
 
   async function load() {
     const body = document.getElementById('yearBody');
@@ -38,7 +38,8 @@
     } catch (e) { body.innerHTML = `<tr><td colspan="6">${UI.emptyHtml('โหลดข้อมูลไม่สำเร็จ', e.message)}</td></tr>`; }
   }
 
-  async function showMembers(id, scroll = true) {
+  async function showMembers(id, scroll = true, keepPage = false) {
+    if (!keepPage || viewing !== id) page = 1;
     viewing = id;
     const y = years.find(x => x.id === id);
     const card = document.getElementById('yearMembers');
@@ -52,7 +53,8 @@
     body.innerHTML = UI.loadingHtml();
     if (scroll) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
     try {
-      const r = await API.get('/api/members', { year_id: id, per_page: 500, sort: 'position' });
+      const r = await API.get('/api/members', { year_id: id, page, per_page: perPage, sort: viewMode });
+      if (r.pages && page > r.pages) { page = r.pages; return showMembers(id, false, true); }
       const groups = {};
       r.items.forEach(m => {
         const k = viewMode === 'position' ? m.position : (m.department || 'ไม่ระบุแผนก');
@@ -64,15 +66,45 @@
         <colgroup><col style="width:34%"><col style="width:15%"><col style="width:21%"><col style="width:14%"><col style="width:16%"></colgroup>
         <thead><tr><th>ชื่อ - นามสกุล</th><th>เลขสมาชิก</th><th>${byPos ? 'แผนกวิชา' : 'ตำแหน่ง'}</th><th>สถานะ</th><th>เบอร์ติดต่อ</th></tr></thead>
         ${Object.entries(groups).map(([k, list]) => `<tbody>
-          <tr class="group-row"><td colspan="5"><div class="flex">${byPos ? posBadge(k, list[0].position_color) : esc(k)}<span class="badge gray">${list.length} คน</span></div></td></tr>
+          <tr class="group-row"><td colspan="5"><div class="flex">${byPos ? posBadge(k, list[0].position_color) : esc(k)}<span class="badge gray">${Fmt.number((r.group_counts || {})[k] ?? list.length)} คน</span>${r.group_counts && r.group_counts[k] > list.length ? `<span class="text-muted text-sm">แสดง ${list.length} คนในหน้านี้</span>` : ''}</div></td></tr>
           ${list.map(m => `<tr>
             <td><div class="person">${avatar(m)}<div><a class="p-main" href="member-view.html?id=${m.id}">${esc(m.full_name)}</a><div class="p-sub">${esc(m.education_level || '')}</div></div></div></td>
             <td class="num">${esc(m.member_no)}</td>
             <td>${byPos ? esc(m.department || '-') : posBadge(m.position, m.position_color)}</td>
             <td>${statusHtml(m.status)}</td><td class="num">${Fmt.phone(m.phone)}</td></tr>`).join('')}
-        </tbody>`).join('')}</table></div>`
+        </tbody>`).join('')}</table></div>${pagerHtml(r)}`
         : UI.emptyHtml('ยังไม่มีสมาชิกในปีการศึกษานี้');
+      bindPager(body, id);
     } catch (e) { body.innerHTML = UI.emptyHtml('โหลดข้อมูลไม่สำเร็จ', e.message); }
+  }
+
+  // ---- แบ่งหน้า ----
+  function pagerHtml(r) {
+    const pages = r.pages || 1;
+    const from = r.total ? (page - 1) * perPage + 1 : 0, to = Math.min(page * perPage, r.total);
+    const nums = [];
+    for (let i = 1; i <= pages; i++) {
+      if (i === 1 || i === pages || Math.abs(i - page) <= 1) nums.push(i);
+      else if (nums[nums.length - 1] !== '…') nums.push('…');
+    }
+    return `<div class="table-foot">
+      <span>แสดง ${from}-${to} จาก ${Fmt.number(r.total)} คน
+        <select class="select" data-per style="width:auto;display:inline-block;height:32px;padding:0 28px 0 10px;margin-left:8px">
+          ${[25, 50, 100, 200].map(n => `<option value="${n}" ${n === perPage ? 'selected' : ''}>${n} / หน้า</option>`).join('')}
+        </select></span>
+      <div class="pager">
+        <button data-p="${page - 1}" ${page <= 1 ? 'disabled' : ''} aria-label="ก่อนหน้า">‹</button>
+        ${nums.map(n => n === '…' ? '<button disabled>…</button>' : `<button data-p="${n}" class="${n === page ? 'active' : ''}">${n}</button>`).join('')}
+        <button data-p="${page + 1}" ${page >= pages ? 'disabled' : ''} aria-label="ถัดไป">›</button>
+      </div></div>`;
+  }
+  function bindPager(body, id) {
+    body.querySelectorAll('[data-p]').forEach(b => b.addEventListener('click', () => {
+      page = +b.dataset.p; showMembers(id, false, true);
+      document.getElementById('yearMembers').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }));
+    const per = body.querySelector('[data-per]');
+    if (per) per.addEventListener('change', () => { perPage = +per.value; page = 1; showMembers(id, false, true); });
   }
 
   function edit(y = {}) {

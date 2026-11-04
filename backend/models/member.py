@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from . import db
+from . import db, BaseModel
 from .lookup import AcademicYear, _d
 
 STATUSES = {"active": "ปกติ", "pending": "รอตรวจสอบ", "inactive": "พ้นสภาพ"}
@@ -14,7 +14,7 @@ EDUCATION_LEVELS = ["ปวช.1", "ปวช.2", "ปวช.3", "ปวส.1", 
 ACTIVITY_CATEGORIES = {"activity": "กิจกรรม", "achievement": "ผลงาน/รางวัล", "work": "ประวัติการทำงาน"}
 
 
-class Member(db.Model):
+class Member(BaseModel):
     __tablename__ = "members"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -212,7 +212,7 @@ class Member(db.Model):
         return d
 
 
-class MemberPosition(db.Model):
+class MemberPosition(BaseModel):
     """ประวัติการดำรงตำแหน่ง — สมาชิก 1 คน มีได้หลายปี (ปีละ 1 ตำแหน่ง)"""
     __tablename__ = "member_positions"
 
@@ -248,7 +248,7 @@ class MemberPosition(db.Model):
         }
 
 
-class MemberEducation(db.Model):
+class MemberEducation(BaseModel):
     __tablename__ = "member_educations"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -265,7 +265,7 @@ class MemberEducation(db.Model):
                 "graduated_year": self.graduated_year, "gpa": self.gpa}
 
 
-class MemberActivity(db.Model):
+class MemberActivity(BaseModel):
     __tablename__ = "member_activities"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -291,7 +291,7 @@ class MemberActivity(db.Model):
                 "image_path": self.image_path}
 
 
-class MemberImage(db.Model):
+class MemberImage(BaseModel):
     __tablename__ = "member_images"
 
     id = db.Column(db.Integer, primary_key=True)
