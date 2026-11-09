@@ -1,4 +1,4 @@
-# ER Diagram — ระบบบริหารจัดการสมาชิกองค์การนักวิชาชีพแห่งประเทศไทย วิทยาลัยเทคนิคมีนบุรี
+# ER Diagram — ระบบบริหารจัดการสมาชิกองค์การนักวิชาชีพในอนาคตแห่งประเทศไทย วิทยาลัยเทคนิคมีนบุรี
 
 ```mermaid
 erDiagram
@@ -16,6 +16,10 @@ erDiagram
     provinces ||--o{ members : "จังหวัด"
     districts ||--o{ members : "อำเภอ/เขต"
     subdistricts ||--o{ members : "ตำบล/แขวง"
+    academic_years ||--o{ elections : "ปีที่เลือกตั้ง"
+    positions ||--o{ elections : "ตำแหน่งที่เลือกตั้ง"
+    elections ||--o{ election_candidates : "ผู้สมัคร (อวท.08)"
+    members ||--o{ election_candidates : ""
 
     users {
         int id PK
@@ -73,6 +77,34 @@ erDiagram
         int subdistrict_id FK
         char postal_code "5 หลัก"
         text address "ประกอบอัตโนมัติ"
+        varchar father_name "อวท.10"
+        varchar mother_name "อวท.10"
+        varchar member_type "สามัญ ระดับสถานศึกษา..ชาติ|วิสามัญ"
+        varchar registration_no "ทะเบียนเลขที่ เช่น 69/รหัส"
+        varchar registrar_name
+        date registered_date
+        varchar leave_reason "พ้นสภาพด้วยเหตุ"
+        date left_date
+    }
+    elections {
+        int id PK
+        int academic_year_id FK
+        int position_id FK
+        int department_id FK
+        varchar title
+        date election_date
+        int eligible_voters
+        date report_date
+        varchar reporter_name "ประธานชมรม"
+        varchar advisor_name "ครูที่ปรึกษา"
+        varchar director_name "ผู้อำนวยการ"
+    }
+    election_candidates {
+        int id PK
+        int election_id FK
+        int member_id FK
+        int candidate_no "UNIQUE ต่อการเลือกตั้ง"
+        int votes
     }
     provinces {
         int id PK

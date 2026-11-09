@@ -14,7 +14,7 @@ from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
 from models import (db, Position, AcademicYear, Department, Member, MemberPosition,
-                    STATUSES, TEMPLATES, EDUCATION_LEVELS)
+                    STATUSES, TEMPLATES, EDUCATION_LEVELS, MEMBER_TYPES)
 from models.member import ACTIVITY_CATEGORIES
 from routes.members import in_year_clause
 from utils.auth import error, login_required, permission_required
@@ -45,6 +45,7 @@ def meta():
         "statuses": STATUSES,
         "templates": TEMPLATES,
         "levels": EDUCATION_LEVELS,
+        "member_types": MEMBER_TYPES,
         "activity_categories": ACTIVITY_CATEGORIES,
     })
 

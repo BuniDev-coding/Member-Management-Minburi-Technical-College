@@ -11,6 +11,8 @@ TEMPLATES = {
     "portfolio": "Portfolio",
 }
 EDUCATION_LEVELS = ["ปวช.1", "ปวช.2", "ปวช.3", "ปวส.1", "ปวส.2"]
+# ระดับสมาชิก ตามช่อง "บันทึกของเจ้าหน้าที่" ในแบบ อวท.10
+MEMBER_TYPES = ["สามัญ ระดับสถานศึกษา", "สามัญ ระดับจังหวัด", "สามัญ ระดับภาค", "สามัญ ระดับชาติ", "วิสามัญ"]
 ACTIVITY_CATEGORIES = {"activity": "กิจกรรม", "achievement": "ผลงาน/รางวัล", "work": "ประวัติการทำงาน"}
 
 
@@ -60,6 +62,15 @@ class Member(BaseModel):
     postal_code = db.Column(db.String(5))
     parent_name = db.Column(db.String(150))
     parent_phone = db.Column(db.String(20))
+    father_name = db.Column(db.String(150))   # ชื่อบิดา (อวท.10)
+    mother_name = db.Column(db.String(150))   # ชื่อมารดา (อวท.10)
+    # ทะเบียนสมาชิก (อวท.10) — แยกจากรหัสนักศึกษาและเลขสมาชิก 10 หลัก
+    member_type = db.Column(db.String(30))            # ระดับสมาชิก (MEMBER_TYPES)
+    registration_no = db.Column(db.String(30), index=True)   # ทะเบียนเลขที่ เช่น 69/6921010001
+    registrar_name = db.Column(db.String(150))        # นายทะเบียนผู้รับสมัคร
+    registered_date = db.Column(db.Date)              # วันที่ลงทะเบียน
+    leave_reason = db.Column(db.String(255))          # พ้นสภาพสมาชิกด้วยเหตุ (อวท.10)
+    left_date = db.Column(db.Date)                    # วันที่พ้นสภาพ
     # ประวัติบุคคล
     biography = db.Column(db.Text)
     skills = db.Column(db.Text)
@@ -198,6 +209,14 @@ class Member(BaseModel):
             "postal_code": self.postal_code,
             "parent_name": self.parent_name,
             "parent_phone": self.parent_phone,
+            "father_name": self.father_name,
+            "mother_name": self.mother_name,
+            "member_type": self.member_type,
+            "registration_no": self.registration_no,
+            "registrar_name": self.registrar_name,
+            "registered_date": _d(self.registered_date),
+            "leave_reason": self.leave_reason,
+            "left_date": _d(self.left_date),
             "biography": self.biography,
             "skills": self.skills,
             "vision": self.vision,

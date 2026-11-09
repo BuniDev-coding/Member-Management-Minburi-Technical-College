@@ -15,13 +15,14 @@ POST   /api/members/<id>/images        เพิ่มรูปภาพปร�
 DELETE /api/members/<id>/images/<iid>  ลบรูปภาพประกอบ
 """
 import json
+import re
 
 from flask import Blueprint, g, jsonify, request
 from sqlalchemy import or_, func
 from sqlalchemy.exc import IntegrityError
 
 from models import (db, Member, MemberPosition, MemberEducation, MemberActivity, MemberImage,
-                    AcademicYear, Position, Department, Province, District, Subdistrict, STATUSES, TEMPLATES, EDUCATION_LEVELS)
+                    AcademicYear, Position, Department, Province, District, Subdistrict, ElectionCandidate, STATUSES, TEMPLATES, EDUCATION_LEVELS, MEMBER_TYPES)
 from models.member import ACTIVITY_CATEGORIES
 from utils.auth import error, permission_required
 from utils.files import save_image, delete_file
@@ -146,6 +147,22 @@ def list_members():
                     "pages": (total + per_page - 1) // per_page, "group_counts": group_counts})
 
 
+@bp.get("/<int:member_id>/form10")
+@permission_required("members.view", "reports")
+def form10(member_id):
+    """ใบสมัครสมาชิก แบบ อวท.10 (PDF)"""
+    from flask import send_file
+    from utils.documents import form10 as build
+    m = db.get_or_404(Member, member_id, description="ไม่พบข้อมูลสมาชิก")
+    registrar = m.registrar_name
+    if not registrar:   # ไม่ได้ระบุ → ผู้ดำรงตำแหน่งนายทะเบียนในปีการศึกษาที่สมัคร
+        mp = (MemberPosition.query.join(Position).filter(Position.name == "นายทะเบียน",
+                                                         MemberPosition.academic_year_id == m.academic_year_id).first())
+        registrar = mp.member.full_name if mp else None
+    return send_file(build(m, MEMBER_TYPES, registrar), as_attachment=True, download_name=f"avt10_{m.member_no}.pdf",
+                     mimetype="application/pdf")
+
+
 @bp.get("/<int:member_id>")
 @permission_required("members.view")
 def get_member(member_id):
@@ -202,9 +219,12 @@ SIMPLE_FIELDS = {
     "nickname": 50, "gender": 10, "nationality": 50, "religion": 50, "blood_type": 5,
     "email": 120, "line_id": 50, "facebook": 120, "parent_name": 150,
     "house_no": 50, "moo": 10, "village": 120, "soi": 100, "road": 100,
+    "father_name": 150, "mother_name": 150, "registrar_name": 150, "leave_reason": 255,
     "class_group": 20, "biography": None, "skills": None, "vision": None, "note": None,
 }
 
+
+REG_NO_RE = re.compile(r"^\d{2}/[0-9A-Za-z-]{1,26}$")   # ทะเบียนเลขที่ อวท.10: ปี 2 หลัก/รหัสประจำตัว
 
 ADDRESS_KEYS = ("house_no", "moo", "village", "soi", "road", "province_id", "district_id", "subdistrict_id",
                 "postal_code")
@@ -277,6 +297,24 @@ def _apply(member: Member, data: dict, is_new: bool):
     if is_new or any(k in data for k in ADDRESS_KEYS):
         member.address = member.compose_address()
 
+    # ---- ทะเบียนสมาชิก (อวท.10) ----
+    if "member_type" in data or is_new:
+        mt = clean_str(data.get("member_type"))
+        if mt and mt not in MEMBER_TYPES:
+            errors["member_type"] = "ระดับสมาชิกไม่ถูกต้อง"
+        member.member_type = mt
+    if "registration_no" in data or is_new:
+        reg = clean_str(data.get("registration_no"), 30)
+        if reg:
+            reg = re.sub(r"\s+", "", reg)
+            if not REG_NO_RE.match(reg):
+                errors["registration_no"] = "ทะเบียนเลขที่ต้องอยู่ในรูปแบบ ปี/รหัสประจำตัว เช่น 69/6921010001"
+            else:
+                dup = Member.query.filter(Member.registration_no == reg, Member.id != (member.id or 0)).first()
+                if dup:
+                    errors["registration_no"] = f"ทะเบียนเลขที่ {reg} ถูกใช้แล้ว ({dup.full_name})"
+        member.registration_no = reg
+
     if "academic_year_id" in data or is_new:
         yid = parse_int(data.get("academic_year_id"))
         if not yid or not db.session.get(AcademicYear, yid):
@@ -305,6 +343,10 @@ def _apply(member: Member, data: dict, is_new: bool):
             member.birth_date = parse_date(data.get("birth_date"))
         if "joined_date" in data or is_new:
             member.joined_date = parse_date(data.get("joined_date"))
+        if "registered_date" in data or is_new:
+            member.registered_date = parse_date(data.get("registered_date"))
+        if "left_date" in data or is_new:
+            member.left_date = parse_date(data.get("left_date"))
     except ValidationError as e:
         errors.update(e.errors)
 
@@ -454,11 +496,25 @@ def _delete_member(m: Member):
 @permission_required("members.delete")
 def delete_member(member_id):
     m = db.get_or_404(Member, member_id, description="ไม่พบข้อมูลสมาชิก")
+    blocked = _election_blocked([m])
+    if blocked:
+        return error(blocked, 409)
     files = _delete_member(m)
     db.session.commit()
     for f in files:
         delete_file(f)
     return jsonify({"success": True, "message": "ลบสมาชิกเรียบร้อย"})
+
+
+def _election_blocked(members):
+    """สมาชิกที่เป็นผู้สมัครเลือกตั้ง (อวท.08) ลบไม่ได้ — คืนข้อความแจ้ง หรือ None"""
+    ids = [m.id for m in members]
+    rows = (db.session.query(ElectionCandidate).filter(ElectionCandidate.member_id.in_(ids)).all()) if ids else []
+    if not rows:
+        return None
+    names = sorted({r.member.full_name for r in rows})
+    return (f"ลบไม่ได้: {', '.join(names[:5])}{' และคนอื่น ๆ' if len(names) > 5 else ''} "
+            f"เป็นผู้สมัครในการเลือกตั้ง — ลบชื่อออกจากการเลือกตั้งก่อน หรือเปลี่ยนสถานะเป็นพ้นสภาพแทน")
 
 
 @bp.post("/bulk")
@@ -473,6 +529,9 @@ def bulk():
     if action == "delete":
         if not g.user.has_permission("members.delete"):
             return error("คุณไม่มีสิทธิ์ลบสมาชิก", 403)
+        blocked = _election_blocked(members)
+        if blocked:
+            return error(blocked, 409)
         files = []
         for m in members:
             files += _delete_member(m)

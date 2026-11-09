@@ -8,7 +8,7 @@
   const id = new URLSearchParams(location.search).get('id');
   const isEdit = !!id;
   Layout.init({ active: isEdit ? 'members' : 'member-form', title: isEdit ? 'แก้ไขข้อมูลสมาชิก' : 'รับสมาชิกใหม่',
-    subtitle: isEdit ? 'ปรับปรุงข้อมูลและประวัติสมาชิก' : 'กรอกข้อมูลตามแบบฟอร์มใบสมัครสมาชิกองค์การนักวิชาชีพแห่งประเทศไทย' });
+    subtitle: isEdit ? 'ปรับปรุงข้อมูลและประวัติสมาชิก' : 'กรอกข้อมูลตามแบบฟอร์มใบสมัครสมาชิกองค์การนักวิชาชีพในอนาคตแห่งประเทศไทย' });
   if (!Auth.require('members.edit')) return;
 
   const form = document.getElementById('memberForm');
@@ -98,8 +98,10 @@
           ${select('subdistrict_id', 'ตำบล / แขวง', '<option value="">-- เลือกอำเภอ/เขตก่อน --</option>', { col: 'col-3' })}
           ${field('postal_code', 'รหัสไปรษณีย์', { col: 'col-3', attrs: 'inputmode="numeric" maxlength="5" autocomplete="off"', hint: 'เลือกอำเภอ/ตำบลแล้วจะขึ้นอัตโนมัติ หรือพิมพ์รหัสเพื่อค้นหา' })}
         </div>
-        <h4 style="margin:26px 0 14px;font-size:15px;color:var(--text-2)">ผู้ปกครอง</h4>
+        <h4 style="margin:26px 0 14px;font-size:15px;color:var(--text-2)">บิดา มารดา และผู้ปกครอง</h4>
         <div class="form-grid">
+          ${field('father_name', 'ชื่อ-นามสกุล บิดา', { col: 'col-6', attrs: 'maxlength="150"' })}
+          ${field('mother_name', 'ชื่อ-นามสกุล มารดา', { col: 'col-6', attrs: 'maxlength="150"' })}
           ${field('parent_name', 'ชื่อผู้ปกครอง', { col: 'col-6' })}
           ${field('parent_phone', 'เบอร์โทรผู้ปกครอง', { type: 'tel', col: 'col-6', attrs: 'inputmode="tel" maxlength="12"' })}
         </div>
@@ -123,6 +125,20 @@
           ${field('class_group', 'กลุ่ม/ห้อง', { col: 'col-2' })}
           ${select('status', 'สถานะสมาชิก', options(Object.entries(meta.statuses).map(([k, l]) => ({ id: k, name: l })), { selected: v('status', 'pending') }), { col: 'col-2' })}
           ${field('joined_date', 'วันที่สมัคร', { type: 'date', col: 'col-2' })}
+        </div>
+        <h4 style="margin:26px 0 14px;font-size:15px;color:var(--text-2)">ทะเบียนสมาชิก (แบบ อวท.10)</h4>
+        <div class="form-grid">
+          ${select('member_type', 'ระดับสมาชิก (บันทึกของเจ้าหน้าที่)', options((meta.member_types || []).map(t => ({ id: t, name: 'สมาชิก' + t })), { selected: v('member_type', isEdit ? '' : 'สามัญ ระดับสถานศึกษา'), placeholder: '-- เลือก --' }), { col: 'col-3' })}
+          <div class="field col-3 half"><label for="f_registration_no">ทะเบียนเลขที่</label>
+            <div class="input-group">
+              <input class="input mono" id="f_registration_no" name="registration_no" value="${esc(v('registration_no'))}" maxlength="30" placeholder="เช่น 69/6921010001" autocomplete="off">
+              <button type="button" class="btn btn-light" id="btnRegNo" title="สร้างจากปีการศึกษา/รหัสประจำตัว">${Icons.refresh}</button>
+            </div>
+            <span class="hint">รูปแบบ ปี/รหัสประจำตัว — แยกจากเลขสมาชิก 10 หลัก</span></div>
+          ${field('registered_date', 'วันที่ลงทะเบียน', { type: 'date', col: 'col-2', hint: 'เว้นว่าง = วันที่สมัคร' })}
+          ${field('registrar_name', 'นายทะเบียนองค์การ', { col: 'col-4', attrs: 'maxlength="150"', hint: 'เว้นว่าง = ผู้ดำรงตำแหน่งนายทะเบียนของปีที่สมัคร' })}
+          ${field('leave_reason', 'พ้นสภาพสมาชิกด้วยเหตุ', { col: 'col-8', attrs: 'maxlength="255"', hint: 'กรอกเมื่อพ้นสภาพสมาชิก (ไม่บังคับ)' })}
+          ${field('left_date', 'วันที่พ้นสภาพ', { type: 'date', col: 'col-4' })}
         </div>
       </div>
 
@@ -418,6 +434,13 @@
     });
     const debouncedCheck = debounce(checkNumber, 400);
     document.getElementById('btnGen').addEventListener('click', () => suggestNumber(true));
+    document.getElementById('btnRegNo').addEventListener('click', () => {
+      const sid = form.student_id.value.trim();
+      const y = meta.years.find(x => String(x.id) === String(form.academic_year_id.value));
+      if (!sid) { toast('กรอกเลขประจำตัวนักเรียน/นักศึกษาก่อน', 'error'); form.student_id.focus(); return; }
+      form.registration_no.value = `${y ? String(y.year).slice(-2) : ''}/${sid}`;
+      form.registration_no.dispatchEvent(new Event('input', { bubbles: true }));
+    });
     ['national_id', 'student_id', 'phone', 'parent_phone'].forEach(n => form[n].addEventListener('input', (e) => { e.target.value = e.target.value.replace(/[^\d]/g, ''); }));
 
     document.getElementById('photoInput').addEventListener('change', (e) => {
@@ -460,6 +483,8 @@
     if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) errors.email = 'รูปแบบอีเมลไม่ถูกต้อง';
     const phone = form.phone.value.trim();
     if (phone && !/^0\d{8,9}$/.test(phone)) errors.phone = 'เบอร์โทรศัพท์ต้องขึ้นต้นด้วย 0 และมี 9-10 หลัก';
+    const reg = form.registration_no.value.replace(/\s+/g, '');
+    if (reg && !/^\d{2}\/[0-9A-Za-z-]{1,26}$/.test(reg)) errors.registration_no = 'ทะเบียนเลขที่ต้องอยู่ในรูปแบบ ปี/รหัสประจำตัว เช่น 69/6921010001';
     const zip = form.postal_code.value.trim();
     if (zip && !/^\d{5}$/.test(zip)) errors.postal_code = 'รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก';
     const years = collect('pos').filter(p => p.academic_year_id && p.position_id).map(p => p.academic_year_id);

@@ -401,6 +401,8 @@
     { key: 'member-form', label: 'รับสมาชิก', href: 'member-form.html', icon: 'userPlus', perm: 'members.edit' },
     { key: 'search', label: 'สืบค้น', href: 'search.html', icon: 'search', perm: 'members.view' },
     { key: 'positions', label: 'ตำแหน่ง', href: 'positions.html', icon: 'award' },
+    { key: 'committee', label: 'คณะกรรมการ (อวท.09)', href: 'committee.html', icon: 'briefcase', perm: 'members.view' },
+    { key: 'elections', label: 'การเลือกตั้ง (อวท.08)', href: 'elections.html', icon: 'checkCircle', perm: 'members.view' },
     { key: 'years', label: 'ปีการศึกษา', href: 'years.html', icon: 'calendar' },
     { key: 'reports', label: 'รายงาน', href: 'reports.html', icon: 'report', perm: 'reports' },
     { key: 'users', label: 'ผู้ใช้งาน', href: 'users.html', icon: 'shield', perms: ['users', 'backup'] },

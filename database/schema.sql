@@ -1,5 +1,5 @@
 -- =====================================================================
---  ระบบบริหารจัดการสมาชิกองค์การนักวิชาชีพแห่งประเทศไทย
+--  ระบบบริหารจัดการสมาชิกองค์การนักวิชาชีพในอนาคตแห่งประเทศไทย
 --  วิทยาลัยเทคนิคมีนบุรี  —  Database Schema (SQLite)
 --
 --  หมายเหตุ:
@@ -95,7 +95,7 @@ CREATE INDEX IF NOT EXISTS ix_subdistricts_district ON subdistricts(district_id)
 CREATE INDEX IF NOT EXISTS ix_subdistricts_postal   ON subdistricts(postal_code);
 
 -- ---------------------------------------------------------------------
--- 5) สมาชิก  (อ้างอิงฟอร์มใบสมัครสมาชิกองค์การนักวิชาชีพแห่งประเทศไทย)
+-- 5) สมาชิก  (อ้างอิงฟอร์มใบสมัครสมาชิกองค์การนักวิชาชีพในอนาคตแห่งประเทศไทย)
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS members (
     id                  INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -141,6 +141,14 @@ CREATE TABLE IF NOT EXISTS members (
     district_id         INTEGER      REFERENCES districts(id)    ON DELETE SET NULL,
     subdistrict_id      INTEGER      REFERENCES subdistricts(id) ON DELETE SET NULL,
     postal_code         CHAR(5),                        -- รหัสไปรษณีย์
+    father_name         VARCHAR(150),                   -- ชื่อบิดา (อวท.10)
+    mother_name         VARCHAR(150),                   -- ชื่อมารดา (อวท.10)
+    member_type         VARCHAR(30),                    -- ระดับสมาชิก: สามัญ ระดับสถานศึกษา/จังหวัด/ภาค/ชาติ, วิสามัญ
+    registration_no     VARCHAR(30),                    -- ทะเบียนเลขที่ เช่น 69/6921010001 (แยกจาก member_no)
+    registrar_name      VARCHAR(150),                   -- นายทะเบียนผู้รับสมัคร
+    registered_date     DATE,                           -- วันที่ลงทะเบียน
+    leave_reason        VARCHAR(255),                   -- พ้นสภาพสมาชิกด้วยเหตุ (อวท.10)
+    left_date           DATE,                           -- วันที่พ้นสภาพ
     parent_name         VARCHAR(150),
     parent_phone        VARCHAR(20),
     -- ประวัติบุคคล
@@ -155,6 +163,7 @@ CREATE TABLE IF NOT EXISTS members (
 CREATE INDEX IF NOT EXISTS ix_members_name   ON members(first_name, last_name);
 CREATE INDEX IF NOT EXISTS ix_members_year   ON members(academic_year_id);
 CREATE INDEX IF NOT EXISTS ix_members_status ON members(status);
+CREATE INDEX IF NOT EXISTS ix_members_registration_no ON members(registration_no);
 
 -- ---------------------------------------------------------------------
 -- 6) ประวัติการดำรงตำแหน่ง (1 สมาชิก : หลายปี)
@@ -216,10 +225,53 @@ CREATE TABLE IF NOT EXISTS member_images (
 );
 
 -- ---------------------------------------------------------------------
+-- 10) การเลือกตั้ง (แบบ อวท.08 — รายงานผลการเลือกตั้งประธานชมรมวิชาชีพ)
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS elections (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    academic_year_id    INTEGER      NOT NULL REFERENCES academic_years(id) ON DELETE RESTRICT,
+    position_id         INTEGER      NOT NULL REFERENCES positions(id)      ON DELETE RESTRICT,
+    department_id       INTEGER      REFERENCES departments(id) ON DELETE SET NULL,   -- ชมรม (ถ้ามี)
+    title               VARCHAR(200) NOT NULL,
+    election_date       DATE,
+    eligible_voters     INTEGER,                        -- ผู้มีสิทธิ์เลือกตั้ง
+    spoiled_ballots     INTEGER,                        -- บัตรเสีย
+    no_vote             INTEGER,                        -- ไม่ประสงค์ลงคะแนน
+    report_date         DATE,                           -- วันที่ของหนังสือรายงาน
+    reporter_name       VARCHAR(150),                   -- ประธานชมรมวิชาชีพ (ผู้รายงาน)
+    advisor_name        VARCHAR(150),                   -- ครูที่ปรึกษาชมรมวิชาชีพ
+    activity_head_name  VARCHAR(150),                   -- หัวหน้างานกิจกรรมนักเรียน นักศึกษา
+    deputy_name         VARCHAR(150),                   -- รองผู้อำนวยการฝ่ายพัฒนากิจการนักเรียน นักศึกษา
+    director_name       VARCHAR(150),                   -- ผู้อำนวยการวิทยาลัย
+    note                TEXT,
+    appointed_at        DATETIME,                       -- แต่งตั้งผู้ชนะเข้าตำแหน่งแล้วเมื่อ
+    created_at          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS ix_elections_year ON elections(academic_year_id);
+
+CREATE TABLE IF NOT EXISTS election_candidates (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    election_id         INTEGER NOT NULL REFERENCES elections(id) ON DELETE CASCADE,
+    member_id           INTEGER NOT NULL REFERENCES members(id)   ON DELETE RESTRICT,  -- ผู้สมัครลบไม่ได้
+    candidate_no        INTEGER NOT NULL,               -- หมายเลขผู้สมัคร
+    votes               INTEGER NOT NULL DEFAULT 0,     -- คะแนนเสียง (ลำดับคำนวณจากคะแนน)
+    note                VARCHAR(255),
+    UNIQUE (election_id, member_id),
+    UNIQUE (election_id, candidate_no)
+);
+CREATE INDEX IF NOT EXISTS ix_candidates_member ON election_candidates(member_id);
+
+-- ---------------------------------------------------------------------
 -- ข้อมูลพื้นฐานเริ่มต้น (ตำแหน่ง)
 -- ---------------------------------------------------------------------
 INSERT OR IGNORE INTO positions (name, level, is_executive, is_committee, color) VALUES
   ('ประธาน',       1, 1, 1, '#C62828'),
   ('รองประธาน',    2, 1, 1, '#1F4FB5'),
-  ('กรรมการ',      3, 0, 1, '#0F8A78'),
+  ('กรรมการ',      3, 0, 1, '#0F8A78'),     -- ลำดับตามแบบ อวท.09
+  ('เหรัญญิก',      4, 0, 1, '#B5761F'),
+  ('ปฏิคม',        5, 0, 1, '#1F8FB5'),
+  ('นายทะเบียน',    6, 0, 1, '#4A6B1F'),
+  ('ประชาสัมพันธ์',  7, 0, 1, '#B51F7A'),
+  ('เลขานุการ',     8, 0, 1, '#6A3FB5'),
   ('สมาชิกทั่วไป',  9, 0, 0, '#D98200');

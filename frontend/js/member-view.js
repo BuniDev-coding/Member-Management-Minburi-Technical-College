@@ -44,8 +44,14 @@
     box.innerHTML = `
       ${canEdit && tpl !== m.profile_template ? `<button class="btn" id="btnSetTpl">${Icons.check}ใช้รูปแบบนี้เป็นค่าหลัก</button>` : ''}
       <button class="btn btn-light" id="btnPrint">${Icons.printer}พิมพ์</button>
+      <button class="btn btn-light" id="btnForm10" title="ดาวน์โหลดใบสมัครสมาชิกแบบ อวท.10">${Icons.pdf}ใบสมัคร อวท.10</button>
       ${canEdit ? `<a class="btn btn-primary" href="member-form.html?id=${m.id}">${Icons.edit}แก้ไขข้อมูล</a>` : ''}`;
     box.querySelector('#btnPrint').addEventListener('click', () => window.print());
+    box.querySelector('#btnForm10').addEventListener('click', async (e) => {
+      const b = e.currentTarget; UI.setLoading(b, true, 'กำลังสร้าง...');
+      try { await API.download(`/api/members/${m.id}/form10`, null, `avt10_${m.member_no}.pdf`); }
+      catch (err) { UI.toast(err.message, 'error'); } finally { UI.setLoading(b, false); }
+    });
     const set = box.querySelector('#btnSetTpl');
     if (set) set.addEventListener('click', async () => {
       try {
@@ -89,7 +95,7 @@
   function tplCard() {
     const cp = curPos();
     return `<div class="tpl-card"><div class="pc pf-box">
-      <div class="pc-cover"><div class="pc-org">องค์การนักวิชาชีพแห่งประเทศไทย<br>วิทยาลัยเทคนิคมีนบุรี</div></div>
+      <div class="pc-cover"><div class="pc-org">องค์การนักวิชาชีพในอนาคตแห่งประเทศไทย<br>วิทยาลัยเทคนิคมีนบุรี</div></div>
       ${photo()}
       <div class="pc-body">
         <h2>${esc(m.full_name)}</h2>
@@ -141,7 +147,9 @@
         ${m.educations.length ? `<div class="timeline">${m.educations.map(e => `<div class="tl-item"><b>${esc(e.institution)}</b>
           <small>${[e.level, e.major, e.graduated_year ? 'ปี ' + e.graduated_year : '', e.gpa ? 'GPA ' + e.gpa : ''].filter(Boolean).map(esc).join(' · ')}</small></div>`).join('')}</div>` : empty('ยังไม่มีข้อมูล')}
         <h3>ที่อยู่ และผู้ปกครอง</h3>
-        <p style="margin:0;line-height:1.8;color:var(--text-2)">${m.address ? nl2br(m.address) : '-'}<br>ผู้ปกครอง: ${val(m.parent_name)} ${m.parent_phone ? '(' + Fmt.phone(m.parent_phone) + ')' : ''}</p>
+        <p style="margin:0;line-height:1.8;color:var(--text-2)">${m.address ? nl2br(m.address) : '-'}<br>บิดา: ${val(m.father_name)} · มารดา: ${val(m.mother_name)}<br>ผู้ปกครอง: ${val(m.parent_name)} ${m.parent_phone ? '(' + Fmt.phone(m.parent_phone) + ')' : ''}</p>
+        <h3>ทะเบียนสมาชิก (อวท.10)</h3>
+        <p style="margin:0;line-height:1.8;color:var(--text-2)">ทะเบียนเลขที่: ${val(m.registration_no)} · ระดับ: ${m.member_type ? 'สมาชิก' + esc(m.member_type) : '-'}<br>นายทะเบียน: ${val(m.registrar_name)} · วันที่ลงทะเบียน: ${m.registered_date ? Fmt.date(m.registered_date) : '-'}${m.leave_reason || m.left_date ? `<br>พ้นสภาพสมาชิกด้วยเหตุ: ${val(m.leave_reason)} · เมื่อ ${m.left_date ? Fmt.date(m.left_date) : '-'}` : ''}</p>
       </article>
     </div>`;
   }
@@ -164,7 +172,7 @@
         <div>
           <span class="ex-badge">${Icons.star}คณะผู้บริหารองค์การ</span>
           <h2>${esc(m.full_name)}</h2>
-          <div class="ex-title"><b>${esc(title)}</b> องค์การนักวิชาชีพแห่งประเทศไทย วิทยาลัยเทคนิคมีนบุรี</div>
+          <div class="ex-title"><b>${esc(title)}</b> องค์การนักวิชาชีพในอนาคตแห่งประเทศไทย วิทยาลัยเทคนิคมีนบุรี</div>
           <div class="ex-meta">
             <div><small>ปีการศึกษา</small><b>${cp ? cp.academic_year : val(m.academic_year)}</b></div>
             <div><small>เลขสมาชิก</small><b>${esc(m.member_no)}</b></div>

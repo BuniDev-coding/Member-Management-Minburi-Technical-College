@@ -107,4 +107,9 @@ class Config:
     ALLOWED_IMAGE_EXT = {"jpg", "jpeg", "png", "gif", "webp"}
 
     # ---- ข้อมูลองค์กร (หัวรายงาน Excel / PDF) ----------------------------
-    ORG_NAME = env_str("ORG_NAME", "องค์การนักวิชาชีพแห่งประเทศไทย วิทยาลัยเทคนิคมีนบุรี")
+    ORG_NAME = env_str("ORG_NAME", "องค์การนักวิชาชีพในอนาคตแห่งประเทศไทย วิทยาลัยเทคนิคมีนบุรี")
+    # ใช้ในเอกสารตามแบบฟอร์ม อวท.08 / อวท.09 / อวท.10
+    AVT_NAME = env_str("AVT_NAME", "องค์การนักวิชาชีพในอนาคตแห่งประเทศไทย")
+    COLLEGE_NAME = env_str("COLLEGE_NAME", "วิทยาลัยเทคนิคมีนบุรี")
+    # ตรา อวท. บนหัวเอกสาร (PNG/JPG) — ถ้าไม่มีไฟล์จะเว้นที่ว่างไว้
+    AVT_LOGO = env_path("AVT_LOGO", "backend/data/avt_logo.png")

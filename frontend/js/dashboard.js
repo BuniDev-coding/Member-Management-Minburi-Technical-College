@@ -1,7 +1,7 @@
 /* หน้า Dashboard */
 (function () {
   const { esc, Fmt, toast } = UI;
-  Layout.init({ active: 'dashboard', title: 'Dashboard', subtitle: 'ภาพรวมระบบสมาชิกองค์การนักวิชาชีพแห่งประเทศไทย' });
+  Layout.init({ active: 'dashboard', title: 'Dashboard', subtitle: 'ภาพรวมระบบสมาชิกองค์การนักวิชาชีพในอนาคตแห่งประเทศไทย' });
 
   document.getElementById('ic1').innerHTML = Icons.users;
   document.getElementById('ic2').innerHTML = Icons.calendar;

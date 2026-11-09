@@ -1,4 +1,4 @@
-"""ระบบบริหารจัดการสมาชิกองค์การนักวิชาชีพแห่งประเทศไทย วิทยาลัยเทคนิคมีนบุรี — Flask REST API
+"""ระบบบริหารจัดการสมาชิกองค์การนักวิชาชีพในอนาคตแห่งประเทศไทย วิทยาลัยเทคนิคมีนบุรี — Flask REST API
 
 รัน:  python app.py   แล้วเปิด http://localhost:5000
 """
@@ -42,8 +42,11 @@ def create_app(config_class=Config):
     from routes.backup import bp as backup_bp
     from routes.files import bp as files_bp
     from routes.address import bp as address_bp
+    from routes.committee import bp as committee_bp
+    from routes.elections import bp as elections_bp
 
-    for bp in (auth_bp, dashboard_bp, members_bp, settings_bp, reports_bp, users_bp, backup_bp, files_bp, address_bp):
+    for bp in (auth_bp, dashboard_bp, members_bp, settings_bp, reports_bp, users_bp, backup_bp, files_bp, address_bp,
+               committee_bp, elections_bp):
         app.register_blueprint(bp)
 
     # ---- สร้างตารางอัตโนมัติเมื่อรันครั้งแรก ----------------------------

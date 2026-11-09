@@ -243,7 +243,7 @@ def _pdf(rows, title):
         canvas.setFont(regular, 9)
         canvas.setFillColor(colors.grey)
         canvas.drawRightString(landscape(A4)[0] - 12 * mm, 8 * mm, f"หน้า {doc_.page}")
-        canvas.drawString(12 * mm, 8 * mm, "เอกสารภายใน — ระบบบริหารจัดการสมาชิกองค์การนักวิชาชีพแห่งประเทศไทย วิทยาลัยเทคนิคมีนบุรี")
+        canvas.drawString(12 * mm, 8 * mm, "เอกสารภายใน — ระบบบริหารจัดการสมาชิกองค์การนักวิชาชีพในอนาคตแห่งประเทศไทย วิทยาลัยเทคนิคมีนบุรี")
         canvas.restoreState()
 
     doc.build(story, onFirstPage=footer, onLaterPages=footer)

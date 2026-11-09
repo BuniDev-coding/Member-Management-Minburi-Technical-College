@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>การเลือกตั้ง | ระบบสมาชิก วิทยาลัยเทคนิคมีนบุรี</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+</head>
+<body>
+  <div class="layout">
+    <aside id="sidebar"></aside>
+    <main class="main">
+      <header id="header"></header>
+      <section class="content">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="ic" data-icon="checkCircle"></span><div>การเลือกตั้ง (แบบ อวท.08)<div class="card-sub">บันทึกผู้สมัคร คะแนนเสียง และผลการเลือกตั้ง</div></div></div>
+            <div class="flex">
+              <select class="select" id="yearSel" style="width:auto;height:38px;font-size:14px" aria-label="ปีการศึกษา"></select>
+              <button class="btn btn-primary btn-sm" id="btnAdd" data-perm="members.edit"></button>
+            </div>
+          </div>
+          <div class="table-wrap" id="elList"></div>
+        </div>
+        <div class="card" id="elDetail" hidden></div>
+      </section>
+    </main>
+  </div>
+  <script src="js/layout.js"></script>
+  <script src="js/member-picker.js"></script>
+  <script src="js/elections.js"></script>
+</body>
+</html>

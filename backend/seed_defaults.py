@@ -16,6 +16,9 @@ MEMBER_NEW_COLUMNS = {
     "house_no": "VARCHAR(50)", "moo": "VARCHAR(10)", "village": "VARCHAR(120)", "soi": "VARCHAR(100)",
     "road": "VARCHAR(100)", "province_id": "INTEGER", "district_id": "INTEGER", "subdistrict_id": "INTEGER",
     "postal_code": "VARCHAR(5)",
+    "father_name": "VARCHAR(150)", "mother_name": "VARCHAR(150)", "member_type": "VARCHAR(30)",
+    "registration_no": "VARCHAR(30)", "registrar_name": "VARCHAR(150)", "registered_date": "DATE",
+    "leave_reason": "VARCHAR(255)", "left_date": "DATE",
 }
 
 DEFAULT_POSITIONS = [
@@ -25,6 +28,74 @@ DEFAULT_POSITIONS = [
     ("กรรมการ", 3, False, True, "#0F8A78"),
     ("สมาชิกทั่วไป", 9, False, False, "#D98200"),
 ]
+
+
+# ตำแหน่งคณะกรรมการดำเนินงานตามแบบ อวท.09 (เพิ่มให้ฐานข้อมูลเดิมครั้งเดียว)
+COMMITTEE_POSITIONS = [
+    # name, level, color — ลำดับตามแบบ อวท.09: ประธาน รองประธาน กรรมการ เหรัญญิก ปฏิคม นายทะเบียน ประชาสัมพันธ์ เลขานุการ
+    ("เหรัญญิก", 4, "#B5761F"),
+    ("ปฏิคม", 5, "#1F8FB5"),
+    ("นายทะเบียน", 6, "#4A6B1F"),
+    ("ประชาสัมพันธ์", 7, "#B51F7A"),
+    ("เลขานุการ", 8, "#6A3FB5"),
+]
+# ลำดับที่ระบบเคยตั้งไว้ในรุ่นก่อน (ใช้ตรวจว่าผู้ใช้ยังไม่ได้ปรับเอง ก่อนเรียงใหม่ตามแบบฟอร์ม)
+_OLD_LEVELS = {"เลขานุการ": 3, "เหรัญญิก": 4, "ปฏิคม": 5, "นายทะเบียน": 6, "ประชาสัมพันธ์": 7, "กรรมการ": 8}
+
+
+def ensure_committee_positions():
+    """เพิ่มตำแหน่งตาม อวท.09 ถ้ายังไม่มีเลยสักตำแหน่ง (ถ้าผู้ใช้ลบเองภายหลังจะไม่เพิ่มกลับ)
+    และเรียงลำดับใหม่ตามแบบฟอร์ม ถ้ายังเป็นลำดับเดิมของระบบรุ่นก่อน"""
+    names = [n for n, _, _ in COMMITTEE_POSITIONS]
+    existing = {p.name: p for p in Position.query.filter(Position.name.in_(names + ["กรรมการ"]))}
+    if not any(n in existing for n in names):
+        committee = existing.get("กรรมการ")
+        if committee and committee.level in (3, 8):
+            committee.level = 3
+        for name, level, color in COMMITTEE_POSITIONS:
+            db.session.add(Position(name=name, level=level, is_executive=False, is_committee=True, color=color))
+        db.session.commit()
+        return True
+    if all(n in existing and existing[n].level == lv for n, lv in _OLD_LEVELS.items()):
+        existing["กรรมการ"].level = 3
+        for name, level, _ in COMMITTEE_POSITIONS:
+            existing[name].level = level
+        db.session.commit()
+        return True
+    return False
+
+
+def migrate_member_types():
+    """ระดับสมาชิกรุ่นก่อน → ระดับตามแบบ อวท.10"""
+    mapping = {"สามัญ": "สามัญ ระดับสถานศึกษา", "กิตติมศักดิ์": None}
+    changed = 0
+    for old, new in mapping.items():
+        changed += Member.query.filter(Member.member_type == old).update({Member.member_type: new})
+    if changed:
+        db.session.commit()
+
+
+def migrate_elections_table():
+    """ตาราง elections รุ่นก่อน (ผู้รับรอง/ผู้อนุมัติ) → ผู้ลงนาม 5 คนตามแบบ อวท.08
+    ถ้ายังไม่มีข้อมูล: สร้างตารางใหม่ / ถ้ามีข้อมูลแล้ว: เพิ่มคอลัมน์ใหม่ (คอลัมน์เดิมเก็บไว้ไม่ลบ)"""
+    insp = inspect(db.engine)
+    if "elections" not in insp.get_table_names():
+        return
+    cols = {c["name"] for c in insp.get_columns("elections")}
+    if "director_name" in cols:
+        return
+    with db.engine.begin() as conn:
+        count = conn.execute(text("SELECT COUNT(*) FROM elections")).scalar()
+        if not count:
+            conn.execute(text("DROP TABLE IF EXISTS election_candidates"))
+            conn.execute(text("DROP TABLE elections"))
+        else:
+            for name, typ in (("report_date", "DATE"), ("reporter_name", "VARCHAR(150)"), ("advisor_name", "VARCHAR(150)"),
+                              ("activity_head_name", "VARCHAR(150)"), ("deputy_name", "VARCHAR(150)"),
+                              ("director_name", "VARCHAR(150)")):
+                conn.execute(text(f"ALTER TABLE elections ADD COLUMN {name} {typ}"))
+            conn.execute(text("UPDATE elections SET advisor_name = certifier_name, director_name = approver_name"))
+    db.create_all()
 
 
 def current_thai_academic_year(today=None):
@@ -156,6 +227,8 @@ def migrate_legacy_addresses():
 
 def ensure_defaults():
     migrate_columns()
+    migrate_elections_table()
+    migrate_member_types()
     load_address_data()
     migrate_legacy_addresses()
     changed = False
@@ -176,3 +249,4 @@ def ensure_defaults():
         changed = True
     if changed:
         db.session.commit()
+    ensure_committee_positions()
