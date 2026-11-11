@@ -25,6 +25,7 @@
     tpl = TPLS[url.get('tpl')] ? url.get('tpl') : m.profile_template;
     document.title = `${m.full_name} | ประวัติสมาชิก`;
     renderTabs(); renderActions(); draw();
+    if (String(pendingForm10()) === String(m.id)) form10Modal(true);   // เพิ่งรับสมาชิกคนนี้ → ให้พิมพ์ใบสมัครได้เลย
   }).catch(e => { stage.innerHTML = `<div class="card">${UI.emptyHtml('ไม่พบข้อมูลสมาชิก', e.message)}</div>`; });
 
   function renderTabs() {
@@ -44,14 +45,10 @@
     box.innerHTML = `
       ${canEdit && tpl !== m.profile_template ? `<button class="btn" id="btnSetTpl">${Icons.check}ใช้รูปแบบนี้เป็นค่าหลัก</button>` : ''}
       <button class="btn btn-light" id="btnPrint">${Icons.printer}พิมพ์</button>
-      <button class="btn btn-light" id="btnForm10" title="ดาวน์โหลดใบสมัครสมาชิกแบบ อวท.10">${Icons.pdf}ใบสมัคร อวท.10</button>
+      <button class="btn btn-light" id="btnForm10" title="ดูตัวอย่าง พิมพ์ หรือดาวน์โหลดใบสมัครสมาชิกแบบ อวท.10">${Icons.pdf}ใบสมัคร อวท.10</button>
       ${canEdit ? `<a class="btn btn-primary" href="member-form.html?id=${m.id}">${Icons.edit}แก้ไขข้อมูล</a>` : ''}`;
     box.querySelector('#btnPrint').addEventListener('click', () => window.print());
-    box.querySelector('#btnForm10').addEventListener('click', async (e) => {
-      const b = e.currentTarget; UI.setLoading(b, true, 'กำลังสร้าง...');
-      try { await API.download(`/api/members/${m.id}/form10`, null, `avt10_${m.member_no}.pdf`); }
-      catch (err) { UI.toast(err.message, 'error'); } finally { UI.setLoading(b, false); }
-    });
+    box.querySelector('#btnForm10').addEventListener('click', () => form10Modal(false));
     const set = box.querySelector('#btnSetTpl');
     if (set) set.addEventListener('click', async () => {
       try {
@@ -59,6 +56,53 @@
         m.profile_template = tpl; toast(r.message); renderTabs(); renderActions();
       } catch (e) { toast(e.message, 'error'); }
     });
+  }
+
+  // ---------------------------------------------------------------------
+  // กล่องใบสมัคร อวท.10 — แสดงตัวอย่าง PDF ให้เลือกพิมพ์ / ดาวน์โหลด
+  //   created = true: เปิดอัตโนมัติหลังรับสมาชิกใหม่ (หน้ารับสมาชิกฝากรหัสไว้ใน sessionStorage)
+  // ---------------------------------------------------------------------
+  const PENDING_KEY = 'mtc_form10_pending';
+  function pendingForm10() {
+    try { return (JSON.parse(sessionStorage.getItem(PENDING_KEY) || 'null') || {}).id; } catch (e) { return null; }
+  }
+  function form10Modal(created) {
+    if (document.querySelector('.form10-modal')) return;
+    let goTo = null, file = null, blobUrl = null;
+    const md = UI.modal({
+      title: created ? 'รับสมาชิกเรียบร้อยแล้ว' : 'ใบสมัครสมาชิก (แบบ อวท.10)', icon: created ? 'checkCircle' : 'pdf',
+      size: 'lg', className: 'form10-modal', static: created,   // หลังรับสมาชิก: ปิดด้วยปุ่มเท่านั้น กันคลิกพลาดแล้วกล่องหาย
+      subtitle: `${m.full_name} · เลขสมาชิก ${m.member_no}${created ? ' — พิมพ์ใบสมัครสมาชิก (แบบ อวท.10) ได้เลย' : ''}`,
+      body: `<div class="form10-preview">${UI.loadingHtml()}</div>`,
+      footer: `${created && Auth.can('members.edit') ? `<button type="button" class="btn btn-light" data-go="member-form.html">${Icons.userPlus}รับสมาชิกคนต่อไป</button>` : ''}
+        <button type="button" class="btn btn-light" data-close>${created ? Icons.user + 'ดูประวัติสมาชิก' : 'ปิด'}</button>
+        <button type="button" class="btn btn-light" data-act="save" disabled>${Icons.download}ดาวน์โหลด PDF</button>
+        <button type="button" class="btn btn-primary" data-act="print" disabled>${Icons.printer}พิมพ์ อวท.10</button>`,
+      onClose: () => {
+        if (created) { try { sessionStorage.removeItem(PENDING_KEY); } catch (e) { /* ignore */ } }
+        if (blobUrl) setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+        if (goTo) Nav.go(goTo);
+      },
+    });
+    const box = md.el.querySelector('.form10-preview');
+    const btnPrint = md.el.querySelector('[data-act="print"]'), btnSave = md.el.querySelector('[data-act="save"]');
+    const next = md.el.querySelector('[data-go]');
+    if (next) next.addEventListener('click', () => { goTo = next.dataset.go; md.close(); });
+    btnSave.addEventListener('click', () => API.saveBlob(file.blob, file.name));
+    btnPrint.addEventListener('click', () => {
+      try {
+        const w = box.querySelector('iframe').contentWindow;
+        w.focus(); w.print();
+      } catch (err) {   // เบราว์เซอร์ที่สั่งพิมพ์ PDF ในกรอบไม่ได้ → เปิดแท็บใหม่ให้พิมพ์จากตัวอ่าน PDF
+        if (!window.open(blobUrl, '_blank')) API.saveBlob(file.blob, file.name);
+      }
+    });
+    API.fetchFile(`/api/members/${m.id}/form10`, null, `avt10_${m.member_no}.pdf`).then((f) => {
+      file = f; blobUrl = URL.createObjectURL(f.blob);
+      box.innerHTML = `<iframe src="${blobUrl}#toolbar=0&view=FitH" title="ใบสมัครสมาชิก แบบ อวท.10"></iframe>`;
+      btnPrint.disabled = btnSave.disabled = false;
+      btnPrint.focus({ preventScroll: true });
+    }).catch((err) => { box.innerHTML = UI.emptyHtml('สร้างใบสมัคร อวท.10 ไม่สำเร็จ', err.message); });
   }
 
   // ---------------------------------------------------------------------

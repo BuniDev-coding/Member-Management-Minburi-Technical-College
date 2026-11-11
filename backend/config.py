@@ -111,5 +111,5 @@ class Config:
     # ใช้ในเอกสารตามแบบฟอร์ม อวท.08 / อวท.09 / อวท.10
     AVT_NAME = env_str("AVT_NAME", "องค์การนักวิชาชีพในอนาคตแห่งประเทศไทย")
     COLLEGE_NAME = env_str("COLLEGE_NAME", "วิทยาลัยเทคนิคมีนบุรี")
-    # ตรา อวท. บนหัวเอกสาร (PNG/JPG) — ถ้าไม่มีไฟล์จะเว้นที่ว่างไว้
+    # ตราบนหัวเอกสาร (PNG/JPG) — ถ้าไม่มีไฟล์นี้จะใช้โลโก้ของระบบ (frontend/img/logo.png)
     AVT_LOGO = env_path("AVT_LOGO", "backend/data/avt_logo.png")

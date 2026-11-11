@@ -24,6 +24,14 @@
   let meta, member = null, photoFile = null, removePhoto = false, galleryFiles = [];
   let numberState = { ok: false, checking: false };
 
+  // เพิ่งรับสมาชิกเสร็จแต่หน้าถูกรีโหลดก่อนไปหน้าประวัติ → ไปต่อให้ (กล่องพิมพ์ อวท.10 จะเปิดที่นั่น)
+  const PENDING_KEY = 'mtc_form10_pending';
+  if (!isEdit) {
+    let pend = null;
+    try { pend = JSON.parse(sessionStorage.getItem(PENDING_KEY) || 'null'); } catch (e) { /* ignore */ }
+    if (pend && pend.id && Date.now() - pend.t < 15000) { Nav.go('member-view.html?id=' + pend.id); return; }
+  }
+
   init();
 
   async function init() {
@@ -523,6 +531,8 @@
     try {
       const r = isEdit ? await API.put('/api/members/' + id, fd) : await API.post('/api/members', fd);
       toast(r.message);
+      // สมาชิกใหม่: จำไว้ให้หน้าประวัติเปิดกล่องพิมพ์ใบสมัคร อวท.10 (เก็บใน sessionStorage จึงไม่หายแม้หน้าเว็บถูกรีโหลด)
+      if (!isEdit) { try { sessionStorage.setItem(PENDING_KEY, JSON.stringify({ id: r.member.id, t: Date.now() })); } catch (e2) { /* ignore */ } }
       setTimeout(() => { Nav.go('member-view.html?id=' + r.member.id); }, 500);
     } catch (err) {
       setLoading(btn, false);

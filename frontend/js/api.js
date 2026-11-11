@@ -66,12 +66,22 @@
 
   /** ดาวน์โหลดไฟล์ที่ต้องใช้ token (Excel / PDF / ไฟล์สำรอง) */
   async function download(path, params, fallbackName) {
+    const f = await fetchFile(path, params, fallbackName);
+    saveBlob(f.blob, f.name);
+  }
+
+  /** ดึงไฟล์ที่ต้องใช้ token มาเป็น Blob (ใช้แสดงตัวอย่าง / สั่งพิมพ์ / บันทึก) → { blob, name } */
+  async function fetchFile(path, params, fallbackName) {
     const res = await request('GET', path, { params, raw: true });
     const blob = await res.blob();
     let name = fallbackName || 'download';
     const cd = res.headers.get('Content-Disposition') || '';
     const m = cd.match(/filename\*=UTF-8''([^;]+)/i) || cd.match(/filename="?([^";]+)"?/i);
     if (m) name = decodeURIComponent(m[1]);
+    return { blob, name };
+  }
+
+  function saveBlob(blob, name) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = name;
@@ -95,6 +105,8 @@
     patch: (path, body) => request('PATCH', path, { body }),
     del: (path) => request('DELETE', path),
     download,
+    fetchFile,
+    saveBlob,
     fileUrl,
   };
 })();

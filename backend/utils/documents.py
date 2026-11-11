@@ -9,6 +9,7 @@
 """
 import io
 import os
+import re
 
 from flask import current_app
 from reportlab.lib import colors
@@ -23,6 +24,7 @@ THAI_MONTHS = ["", "มกราคม", "กุมภาพันธ์", "ม�
                "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
 _THAI_DIGITS = str.maketrans("0123456789", "๐๑๒๓๔๕๖๗๘๙")
 FULL_W = 170 * mm   # ความกว้างพื้นที่พิมพ์ (A4 ขอบซ้าย-ขวา 20 มม.)
+FRAME_W = FULL_W - 12   # ความกว้างที่ข้อความใช้ได้จริง (กรอบของ reportlab เว้นขอบในข้างละ 6pt)
 BODY_SIZE, BODY_LEADING = 12.5, 18.5   # ขนาดใกล้เคียง TH Sarabun 16 ของต้นฉบับ
 FORM09_LABELS = {"ประธาน": "ประธานชมรม", "รองประธาน": "รองประธานชมรม"}   # ชื่อตำแหน่งที่ใช้ในแบบฟอร์ม
 
@@ -51,6 +53,24 @@ def fill(value, w=20):
     if value in (None, ""):
         return dots(w)
     return f"<u>&nbsp;&nbsp;{_x(value).replace(' ', '&nbsp;')}&nbsp;&nbsp;</u>"   # ไม่ตัดบรรทัดกลางค่า
+
+
+def fit_line(parts, avail=None):
+    """ต่อข้อความกับช่องกรอกให้พอดี 1 บรรทัด — parts: ข้อความ (str) หรือ (ค่า, ความกว้างช่อง มม.)
+    ช่องที่ยังไม่มีค่าจะยืด/หดจุดไข่ปลาตามที่ว่างที่เหลือ บรรทัดจึงไม่ล้นไปขึ้นบรรทัดใหม่"""
+    from reportlab.pdfbase.pdfmetrics import stringWidth
+
+    def sw(t):
+        return stringWidth(t, _FONT["name"], _FONT["size"])
+
+    def blank(p):
+        return p[0] in (None, "")
+    avail = FRAME_W if avail is None else avail
+    fixed = sum(sw(re.sub(r"<[^>]+>", "", p).replace("&nbsp;", " ").replace("&amp;", "&")) if isinstance(p, str)
+                else (0 if blank(p) else sw(f"  {p[0]}  ")) for p in parts)
+    want = sum(p[1] for p in parts if not isinstance(p, str) and blank(p)) * mm
+    k = max(avail - fixed - 2 * mm, 0) / want if want else 1
+    return "".join(p if isinstance(p, str) else fill(p[0], p[1] * k) for p in parts)
 
 
 def date_parts(d):
@@ -92,6 +112,8 @@ class _Doc:
         self.avt, self.college = cfg["AVT_NAME"], cfg["COLLEGE_NAME"]
         self.college_short = self.college.replace("วิทยาลัย", "", 1)   # "เทคนิคมีนบุรี" ต่อท้ายคำว่า วิทยาลัย
         self.logo = cfg.get("AVT_LOGO")
+        if not (self.logo and os.path.isfile(self.logo)):   # ไม่มีไฟล์ตราที่ตั้งค่าไว้ → ใช้โลโก้ของระบบ
+            self.logo = os.path.join(cfg["FRONTEND_FOLDER"], "img", "logo.png")
         self.regular, self.bold = register_thai_font(cfg["FONT_FOLDER"])
         _FONT["name"] = self.regular
         self.buf = io.BytesIO()
@@ -172,18 +194,18 @@ def form10(m, member_types, registrar=None):
     house = " ".join(x for x in (m.house_no, m.village) if x) or None
     level = " ".join(x for x in (m.education_level, f"กลุ่ม {m.class_group}" if m.class_group else None) if x) or None
     bday, bmonth, byear = date_parts(m.birth_date)
+    F = fit_line
     lines = [
-        ("indent", f"ข้าพเจ้า{fill(m.full_name, 128)}"),
-        ("body", f"รหัสประจำตัวนักเรียน&nbsp;นักศึกษา{fill(m.student_id, 58)}"
-                 f"แผนกวิชา{fill(m.department.name if m.department else None, 50)}"),
-        ("body", f"ระดับชั้น{fill(level, 18)}{_x(d.college)}&nbsp;เกิดวันที่"
-                 f"{fill(f'{bday} {bmonth} {byear}' if bday else None, 72)}"),
-        ("body", f"ที่อยู่ปัจจุบันบ้านเลขที่{fill(house, 48)}ตรอก/ซอย{fill(m.soi, 65)}"),
-        ("body", f"ถนน/หมู่ที่{fill(road_moo, 64)}แขวง/ตำบล{fill(sd.name_th if sd else None, 64)}"),
-        ("body", f"เขต/อำเภอ{fill(ds.name_th if ds else None, 33)}"
-                 f"จังหวัด{fill(m.province.name_th if m.province else None, 30)}"
-                 f"รหัสไปรษณีย์{fill(m.postal_code, 20)}โทรศัพท์{fill(m.phone, 26)}"),
-        ("body", f"ชื่อบิดา{fill(m.father_name, 68)}&nbsp;ชื่อมารดา{fill(m.mother_name, 68)}"),
+        ("indent", F(["ข้าพเจ้า", (m.full_name, 128)], FRAME_W - 20 * mm)),
+        ("body", F(["รหัสประจำตัวนักเรียน&nbsp;นักศึกษา", (m.student_id, 58),
+                    "แผนกวิชา", (m.department.name if m.department else None, 50)])),
+        ("body", F(["ระดับชั้น", (level, 18), f"{_x(d.college)}&nbsp;เกิดวันที่",
+                    (f"{bday} {bmonth} {byear}" if bday else None, 72)])),
+        ("body", F(["ที่อยู่ปัจจุบันบ้านเลขที่", (house, 48), "ตรอก/ซอย", (m.soi, 65)])),
+        ("body", F(["ถนน/หมู่ที่", (road_moo, 64), "แขวง/ตำบล", (sd.name_th if sd else None, 64)])),
+        ("body", F(["เขต/อำเภอ", (ds.name_th if ds else None, 33), "จังหวัด", (m.province.name_th if m.province else None, 30),
+                    "รหัสไปรษณีย์", (m.postal_code, 20), "โทรศัพท์", (m.phone, 26)])),
+        ("body", F(["ชื่อบิดา", (m.father_name, 68), "&nbsp;ชื่อมารดา", (m.mother_name, 68)])),
         ("body", f"ขอสมัครเป็นสมาชิก{_x(d.avt)}&nbsp;{_x(d.college)}"),
     ]
     for style, text in lines:
