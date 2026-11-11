@@ -421,7 +421,7 @@
     sidebarKey = key;
     el.className = 'sidebar';
     const items = MENU.filter(m => (!m.perm || Auth.can(m.perm)) && (!m.perms || Auth.canAny(...m.perms)));
-    el.innerHTML = `<a class="brand" href="dashboard.html" title="วิทยาลัยเทคนิคมีนบุรี"><img src="img/logo.png" alt="ตราวิทยาลัยเทคนิคมีนบุรี"></a>
+    el.innerHTML = `<a class="brand" href="dashboard.html" title="ระบบบริหารจัดการสมาชิกองค์การนักวิชาชีพในอนาคตแห่งประเทศไทย วิทยาลัยเทคนิคมีนบุรี"><img src="img/logo.png" alt="ตราวิทยาลัยเทคนิคมีนบุรี"></a>
       <nav aria-label="เมนูหลัก">${items.map(m =>
         `<a class="nav-item ${m.key === active ? 'active' : ''}" href="${m.href}" data-tip="${m.label}" aria-label="${m.label}">${Icons[m.icon]}</a>`).join('')}
         <button class="nav-item nav-logout" data-tip="ออกจากระบบ" aria-label="ออกจากระบบ" id="btnLogout">${Icons.logout}</button>
@@ -508,7 +508,7 @@
   function init(opts) {
     renderSidebar(opts.active);
     renderHeader(opts.title, opts.subtitle, opts);
-    document.title = `${opts.title} | ระบบสมาชิก วิทยาลัยเทคนิคมีนบุรี`;
+    document.title = `${opts.title} | ระบบบริหารจัดการสมาชิกองค์การนักวิชาชีพในอนาคตแห่งประเทศไทย วิทยาลัยเทคนิคมีนบุรี`;
     // ตรวจ token กับเซิร์ฟเวอร์ และอัปเดตสิทธิ์ล่าสุด
     return Auth.refresh().then((u) => { renderSidebar(opts.active); return u; }).catch(() => Auth.user);
   }

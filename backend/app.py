@@ -1,4 +1,6 @@
-"""ระบบบริหารจัดการสมาชิกองค์การนักวิชาชีพในอนาคตแห่งประเทศไทย วิทยาลัยเทคนิคมีนบุรี — Flask REST API
+"""ระบบบริหารจัดการสมาชิกองค์การนักวิชาชีพในอนาคตแห่งประเทศไทย วิทยาลัยเทคนิคมีนบุรี
+(Membership Management System for the Association of Future Thai Professionals, Minburi Technical College)
+— Flask REST API
 
 รัน:  python app.py   แล้วเปิด http://localhost:5000
 """

@@ -1,5 +1,6 @@
 /* =====================================================================
-   ระบบบริหารจัดการสมาชิก วิทยาลัยเทคนิคมีนบุรี
+   ระบบบริหารจัดการสมาชิกองค์การนักวิชาชีพในอนาคตแห่งประเทศไทย วิทยาลัยเทคนิคมีนบุรี
+   (Membership Management System for the Association of Future Thai Professionals, Minburi Technical College)
    ธีมน้ำเงิน-ขาว (สีประจำวิทยาลัย) — เรียบ อ่านง่าย เน้นข้อมูล
    ===================================================================== */
 :root {
@@ -634,8 +635,10 @@ a.list-item:hover { background: var(--hover); color: inherit; }
   display: grid; place-items: center; overflow: hidden;
 }
 .login-art .logo img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
-.login-art h1 { font-size: 27px; line-height: 1.4; margin: 24px 0 10px; }
-.login-art p { color: rgba(255, 255, 255, .78); line-height: 1.7; margin: 0; }
+.login-art h1 { font-size: 20px; line-height: 1.45; margin: 20px 0 8px; font-weight: 700; }
+.login-art p { color: rgba(255, 255, 255, .78); line-height: 1.6; margin: 0; }
+.login-art .login-en { font-size: 12px; line-height: 1.45; color: rgba(255, 255, 255, .72); margin: 0 0 10px; font-style: italic; }
+.login-art .login-sub { font-size: 13.5px; color: rgba(255, 255, 255, .88); margin: 0; }
 .login-art .feat { display: flex; flex-direction: column; gap: 10px; padding-top: 22px; border-top: 1px solid rgba(255, 255, 255, .15); }
 .login-art .feat div { display: flex; align-items: center; gap: 12px; font-size: 14px; color: rgba(255, 255, 255, .88); }
 .login-art .feat svg { width: 18px; height: 18px; color: #9DB8EC; flex: 0 0 auto; }

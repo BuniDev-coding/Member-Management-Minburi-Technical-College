@@ -1,6 +1,7 @@
 -- =====================================================================
 --  ระบบบริหารจัดการสมาชิกองค์การนักวิชาชีพในอนาคตแห่งประเทศไทย
 --  วิทยาลัยเทคนิคมีนบุรี  —  Database Schema (SQLite)
+--  (Membership Management System for the Association of Future Thai Professionals, Minburi Technical College)
 --
 --  หมายเหตุ:
 --   * ระบบสร้างตารางอัตโนมัติจาก SQLAlchemy models (backend/models) เมื่อรันครั้งแรก

@@ -1,4 +1,5 @@
 # ER Diagram — ระบบบริหารจัดการสมาชิกองค์การนักวิชาชีพในอนาคตแห่งประเทศไทย วิทยาลัยเทคนิคมีนบุรี
+**(Membership Management System for the Association of Future Thai Professionals, Minburi Technical College)**
 
 ```mermaid
 erDiagram
