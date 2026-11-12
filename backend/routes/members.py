@@ -22,7 +22,7 @@ from sqlalchemy import or_, func
 from sqlalchemy.exc import IntegrityError
 
 from models import (db, Member, MemberPosition, MemberEducation, MemberActivity, MemberImage,
-                    AcademicYear, Position, Department, Province, District, Subdistrict, ElectionCandidate, STATUSES, TEMPLATES, EDUCATION_LEVELS, MEMBER_TYPES)
+                    AcademicYear, Position, Department, Province, District, Subdistrict, ElectionCandidate, FormOption, STATUSES, TEMPLATES, MEMBER_TYPES)
 from models.member import ACTIVITY_CATEGORIES
 from utils.auth import error, permission_required
 from utils.files import save_image, delete_file
@@ -159,7 +159,7 @@ def form10(member_id):
         mp = (MemberPosition.query.join(Position).filter(Position.name == "นายทะเบียน",
                                                          MemberPosition.academic_year_id == m.academic_year_id).first())
         registrar = mp.member.full_name if mp else None
-    return send_file(build(m, MEMBER_TYPES, registrar), as_attachment=True, download_name=f"avt10_{m.member_no}.pdf",
+    return send_file(build(m, FormOption.names("member_type") or MEMBER_TYPES, registrar), as_attachment=True, download_name=f"avt10_{m.member_no}.pdf",
                      mimetype="application/pdf")
 
 
@@ -287,12 +287,7 @@ def _apply(member: Member, data: dict, is_new: bool):
         zipc = clean_digits(data.get("postal_code"))
         if zipc and not (len(zipc) == 5 and zipc.isdigit()):
             errors["postal_code"] = "รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก"
-        elif zipc and ds:
-            valid = {c for (c,) in db.session.query(Subdistrict.postal_code)
-                     .filter(Subdistrict.district_id == ds.id).distinct()}
-            if valid and zipc not in valid:
-                errors["postal_code"] = (f"รหัสไปรษณีย์ไม่ตรงกับ{ds.prefix or ''}{ds.name_th} "
-                                         f"(ใช้ได้: {', '.join(sorted(valid))})")
+        # รหัสไปรษณีย์กรอกเองได้ — ไม่บังคับให้ตรงกับรหัสของอำเภอในฐานข้อมูล
         member.postal_code = zipc or (sd.postal_code if sd else None)
     if is_new or any(k in data for k in ADDRESS_KEYS):
         member.address = member.compose_address()
@@ -300,7 +295,8 @@ def _apply(member: Member, data: dict, is_new: bool):
     # ---- ทะเบียนสมาชิก (อวท.10) ----
     if "member_type" in data or is_new:
         mt = clean_str(data.get("member_type"))
-        if mt and mt not in MEMBER_TYPES:
+        # ค่าเดิมของสมาชิกยังใช้ได้ แม้ตัวเลือกนั้นถูกลบจากหน้าตั้งค่าไปแล้ว
+        if mt and mt != member.member_type and mt not in FormOption.names("member_type"):
             errors["member_type"] = "ระดับสมาชิกไม่ถูกต้อง"
         member.member_type = mt
     if "registration_no" in data or is_new:
@@ -327,7 +323,7 @@ def _apply(member: Member, data: dict, is_new: bool):
         member.department_id = did
     if "education_level" in data or is_new:
         lv = clean_str(data.get("education_level"))
-        member.education_level = lv if lv in EDUCATION_LEVELS else lv
+        member.education_level = lv
     if "status" in data or is_new:
         st = data.get("status") or "pending"
         if st not in STATUSES:

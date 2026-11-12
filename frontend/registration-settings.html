@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>ตั้งค่าข้อมูลการสมัคร | ระบบบริหารจัดการสมาชิกองค์การนักวิชาชีพในอนาคตแห่งประเทศไทย วิทยาลัยเทคนิคมีนบุรี</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+</head>
+<body>
+  <div class="layout">
+    <aside id="sidebar"></aside>
+    <main class="main">
+      <header id="header"></header>
+      <section class="content">
+        <!-- ตัวเลือกในดรอปดาวน์ของแบบฟอร์มสมัคร -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="ic" data-icon="list"></span><div>ตัวเลือกในแบบฟอร์มสมัคร<div class="card-sub">รายการที่แสดงในช่องดรอปดาวน์ของหน้ารับสมาชิก</div></div></div>
+            <button class="btn btn-primary btn-sm" id="btnAddOpt"></button>
+          </div>
+          <div class="tabs" id="optTabs" style="margin-bottom:14px"></div>
+          <div class="table-wrap"><table class="table" style="min-width:520px">
+            <thead><tr><th style="width:70px">ลำดับ</th><th>ตัวเลือก</th><th class="center">สมาชิกที่ใช้</th><th style="width:150px"></th></tr></thead>
+            <tbody id="optBody"><tr><td colspan="4"><div class="loading"><span class="spinner"></span></div></td></tr></tbody>
+          </table></div>
+          <p class="hint" id="optNote" style="margin-top:10px"></p>
+        </div>
+
+        <!-- จังหวัด / อำเภอ / ตำบล / รหัสไปรษณีย์ -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="ic" data-icon="map"></span><div>ข้อมูลที่อยู่<div class="card-sub">จังหวัด อำเภอ/เขต ตำบล/แขวง และรหัสไปรษณีย์ ที่ใช้เลือกในแบบฟอร์มสมัคร</div></div></div>
+          </div>
+          <div class="addr-cols">
+            <div class="addr-col">
+              <div class="addr-head"><b>จังหวัด <span class="badge gray" id="pvCount"></span></b><button class="btn btn-sm" data-add="province"></button></div>
+              <input class="input" type="search" id="pvSearch" placeholder="ค้นหาจังหวัด..." aria-label="ค้นหาจังหวัด" autocomplete="off">
+              <div class="addr-list" id="pvList"></div>
+            </div>
+            <div class="addr-col">
+              <div class="addr-head"><b><span id="dsTitle">อำเภอ / เขต</span> <span class="badge gray" id="dsCount"></span></b><button class="btn btn-sm" data-add="district" disabled></button></div>
+              <input class="input" type="search" id="dsSearch" placeholder="ค้นหาอำเภอ/เขต..." aria-label="ค้นหาอำเภอ/เขต" autocomplete="off">
+              <div class="addr-list" id="dsList"></div>
+            </div>
+            <div class="addr-col">
+              <div class="addr-head"><b><span id="sdTitle">ตำบล / แขวง</span> <span class="badge gray" id="sdCount"></span></b><button class="btn btn-sm" data-add="subdistrict" disabled></button></div>
+              <input class="input" type="search" id="sdSearch" placeholder="ค้นหาตำบล/แขวง หรือรหัสไปรษณีย์..." aria-label="ค้นหาตำบล/แขวง" autocomplete="off">
+              <div class="addr-list" id="sdList"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="js/layout.js"></script>
+  <script src="js/registration-settings.js"></script>
+</body>
+</html>

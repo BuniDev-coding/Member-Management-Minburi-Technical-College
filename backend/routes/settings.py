@@ -8,13 +8,16 @@ PUT|DELETE      /api/years/<id>        แก้ไข / ลบ
 POST            /api/years/<id>/set-current   ตั้งเป็นปีการศึกษาปัจจุบัน
 GET|POST        /api/departments       รายการ / เพิ่ม
 PUT|DELETE      /api/departments/<id>  แก้ไข / ลบ
+GET|POST        /api/options           ตัวเลือกดรอปดาวน์ของแบบฟอร์มสมัคร (คำนำหน้า เพศ ฯลฯ) / เพิ่ม
+PUT|DELETE      /api/options/<id>      แก้ไข / ลบ
+POST            /api/options/reorder   จัดลำดับ {category, ids: [...]}
 """
 from flask import Blueprint, jsonify, request
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
-from models import (db, Position, AcademicYear, Department, Member, MemberPosition,
-                    STATUSES, TEMPLATES, EDUCATION_LEVELS, MEMBER_TYPES)
+from models import (db, Position, AcademicYear, Department, Member, MemberPosition, FormOption,
+                    OPTION_CATEGORIES, STATUSES, TEMPLATES)
 from models.member import ACTIVITY_CATEGORIES
 from routes.members import in_year_clause
 from utils.auth import error, login_required, permission_required
@@ -44,8 +47,11 @@ def meta():
         "departments": [d.to_dict() for d in Department.query.order_by(Department.name)],
         "statuses": STATUSES,
         "templates": TEMPLATES,
-        "levels": EDUCATION_LEVELS,
-        "member_types": MEMBER_TYPES,
+        "levels": FormOption.names("education_level"),
+        "member_types": FormOption.names("member_type"),
+        "prefixes": FormOption.names("prefix"),
+        "genders": FormOption.names("gender"),
+        "blood_types": FormOption.names("blood_type"),
         "activity_categories": ACTIVITY_CATEGORIES,
     })
 
@@ -256,3 +262,96 @@ def delete_department(did):
     db.session.delete(d)
     db.session.commit()
     return jsonify({"success": True, "message": "ลบแผนกวิชาแล้ว"})
+
+
+# =====================================================================
+# ตัวเลือกดรอปดาวน์ของแบบฟอร์มสมัคร (คำนำหน้า เพศ กรุ๊ปเลือด ระดับชั้น ระดับสมาชิก)
+# =====================================================================
+def _option_column(category):
+    return getattr(Member, OPTION_CATEGORIES[category][1])
+
+
+@bp.get("/options")
+@login_required
+def list_options():
+    categories = []
+    for cat, (label, _col, max_len, _defaults) in OPTION_CATEGORIES.items():
+        col = _option_column(cat)
+        used = dict(db.session.query(col, func.count(Member.id)).filter(col.isnot(None)).group_by(col).all())
+        items = [{**o.to_dict(), "member_count": used.get(o.name, 0)}
+                 for o in FormOption.query.filter_by(category=cat).order_by(FormOption.sort_order, FormOption.id)]
+        categories.append({"key": cat, "label": label, "max_length": max_len, "items": items})
+    return jsonify({"success": True, "categories": categories})
+
+
+def _option_name(category, data):
+    label, _col, max_len, _defaults = OPTION_CATEGORIES[category]
+    name = " ".join((clean_str(data.get("name")) or "").split())
+    if not name:
+        raise ValidationError({"name": f"กรุณากรอก{label}"})
+    if len(name) > max_len:
+        raise ValidationError({"name": f"{label}ยาวได้ไม่เกิน {max_len} ตัวอักษร"})
+    return name
+
+
+@bp.post("/options")
+@permission_required("settings")
+def create_option():
+    data = request.get_json(silent=True) or {}
+    cat = data.get("category")
+    if cat not in OPTION_CATEGORIES:
+        return error("ไม่พบหมวดตัวเลือก")
+    try:
+        name = _option_name(cat, data)
+    except ValidationError as e:
+        return error(str(e), 422, errors=e.errors)
+    last = db.session.query(func.max(FormOption.sort_order)).filter(FormOption.category == cat).scalar() or 0
+    o = FormOption(category=cat, name=name, sort_order=last + 1)
+    db.session.add(o)
+    return _commit("มีตัวเลือกนี้อยู่แล้ว") or (jsonify({"success": True, "message": "เพิ่มตัวเลือกแล้ว",
+                                                       "item": o.to_dict()}), 201)
+
+
+@bp.put("/options/<int:oid>")
+@permission_required("settings")
+def update_option(oid):
+    o = db.get_or_404(FormOption, oid, description="ไม่พบตัวเลือก")
+    try:
+        name = _option_name(o.category, request.get_json(silent=True) or {})
+    except ValidationError as e:
+        return error(str(e), 422, errors=e.errors)
+    old, changed = o.name, 0
+    if name != old:
+        if FormOption.query.filter(FormOption.category == o.category, FormOption.name == name,
+                                   FormOption.id != o.id).first():
+            return error("มีตัวเลือกนี้อยู่แล้ว", 409)
+        o.name = name
+        # เปลี่ยนชื่อตัวเลือก → ปรับข้อมูลสมาชิกที่ใช้ค่าเดิมให้ตรงกัน
+        col = _option_column(o.category)
+        changed = Member.query.filter(col == old).update({col: name}, synchronize_session=False)
+    msg = "บันทึกแล้ว" + (f" (ปรับข้อมูลสมาชิก {changed} คนให้ตรงกัน)" if changed else "")
+    return _commit("มีตัวเลือกนี้อยู่แล้ว") or jsonify({"success": True, "message": msg, "item": o.to_dict()})
+
+
+@bp.delete("/options/<int:oid>")
+@permission_required("settings")
+def delete_option(oid):
+    o = db.get_or_404(FormOption, oid, description="ไม่พบตัวเลือก")
+    db.session.delete(o)   # สมาชิกที่เคยเลือกค่านี้ยังเก็บค่าเดิมไว้ ไม่ถูกลบตาม
+    db.session.commit()
+    return jsonify({"success": True, "message": "ลบตัวเลือกแล้ว"})
+
+
+@bp.post("/options/reorder")
+@permission_required("settings")
+def reorder_options():
+    data = request.get_json(silent=True) or {}
+    cat = data.get("category")
+    if cat not in OPTION_CATEGORIES:
+        return error("ไม่พบหมวดตัวเลือก")
+    rows = {o.id: o for o in FormOption.query.filter_by(category=cat)}
+    ids = [i for i in (parse_int(x) for x in (data.get("ids") or [])) if i in rows]
+    for order, oid in enumerate(ids, 1):
+        rows[oid].sort_order = order
+    db.session.commit()
+    return jsonify({"success": True, "message": "จัดลำดับแล้ว"})

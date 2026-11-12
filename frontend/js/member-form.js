@@ -13,7 +13,8 @@
 
   const form = document.getElementById('memberForm');
   const MEMBER_NO_RE = /^\d{10}$/;
-  const PREFIXES = ['นาย', 'นางสาว', 'นาง', 'เด็กชาย', 'เด็กหญิง'];
+  // ตัวเลือกจากหน้า "ตั้งค่าข้อมูลการสมัคร" + ค่าเดิมของสมาชิก (กรณีตัวเลือกนั้นถูกลบไปแล้ว ค่าจะไม่หาย)
+  const opts = (key, cur) => { const l = (meta[key] || []).slice(); if (cur && !l.includes(cur)) l.push(cur); return l; };
   const TPL_DESC = {
     card: ['รูปภาพ ชื่อ และตำแหน่ง แบบการ์ดกระชับ', '<i class="c p" style="left:38%;top:12px;width:24%;height:34px"></i><i style="left:25%;top:52px;width:50%;height:6px"></i><i style="left:33%;top:63px;width:34%;height:5px"></i>'],
     biography: ['รูปภาพพร้อมประวัติส่วนตัว', '<i class="p" style="left:8px;top:8px;width:30%;height:62px"></i><i style="left:42%;top:12px;width:50%;height:7px"></i><i style="left:42%;top:26px;width:48%;height:4px"></i><i style="left:42%;top:35px;width:44%;height:4px"></i><i style="left:42%;top:44px;width:46%;height:4px"></i>'],
@@ -36,7 +37,7 @@
 
   async function init() {
     try {
-      meta = await UI.getMeta();
+      meta = await UI.getMeta(true);   // โหลดใหม่เสมอ เผื่อเพิ่งแก้ตัวเลือกที่หน้าตั้งค่าข้อมูลการสมัคร
       if (isEdit) member = (await API.get('/api/members/' + id)).member;
       render();
       if (!isEdit) suggestNumber(false);
@@ -74,18 +75,18 @@
           </div>
         </div>
         <div class="form-grid">
-          ${select('prefix', 'คำนำหน้า', options(PREFIXES, { selected: v('prefix'), placeholder: '-- เลือก --' }), { col: 'col-2' })}
+          ${select('prefix', 'คำนำหน้า', options(opts('prefixes', v('prefix')), { selected: v('prefix'), placeholder: '-- เลือก --' }), { col: 'col-2' })}
           ${field('first_name', 'ชื่อ', { req: true, col: 'col-4', attrs: 'maxlength="100"' })}
           ${field('last_name', 'นามสกุล', { req: true, col: 'col-4', attrs: 'maxlength="100"' })}
           ${field('nickname', 'ชื่อเล่น', { col: 'col-2' })}
           ${field('first_name_en', 'ชื่อ (ภาษาอังกฤษ)', { col: 'col-4' })}
           ${field('last_name_en', 'นามสกุล (ภาษาอังกฤษ)', { col: 'col-4' })}
-          ${select('gender', 'เพศ', options(['ชาย', 'หญิง', 'อื่น ๆ'], { selected: v('gender'), placeholder: '-- เลือก --' }), { col: 'col-2' })}
+          ${select('gender', 'เพศ', options(opts('genders', v('gender')), { selected: v('gender'), placeholder: '-- เลือก --' }), { col: 'col-2' })}
           ${field('birth_date', 'วันเกิด', { type: 'date', col: 'col-2' })}
           ${field('national_id', 'เลขประจำตัวประชาชน', { col: 'col-4', attrs: 'inputmode="numeric" maxlength="13" pattern="\\d{13}"', hint: '13 หลัก' })}
           ${field('nationality', 'สัญชาติ', { col: 'col-2' })}
           ${field('religion', 'ศาสนา', { col: 'col-3' })}
-          ${select('blood_type', 'กรุ๊ปเลือด', options(['A', 'B', 'O', 'AB'], { selected: v('blood_type'), placeholder: '-' }), { col: 'col-3' })}
+          ${select('blood_type', 'กรุ๊ปเลือด', options(opts('blood_types', v('blood_type')), { selected: v('blood_type'), placeholder: '-' }), { col: 'col-3' })}
         </div>
         <h4 style="margin:26px 0 14px;font-size:15px;color:var(--text-2)">ข้อมูลติดต่อ</h4>
         <div class="form-grid">
@@ -104,7 +105,7 @@
           ${select('province_id', 'จังหวัด', '<option value="">กำลังโหลด...</option>', { col: 'col-3' })}
           ${select('district_id', 'อำเภอ / เขต', '<option value="">-- เลือกจังหวัดก่อน --</option>', { col: 'col-3' })}
           ${select('subdistrict_id', 'ตำบล / แขวง', '<option value="">-- เลือกอำเภอ/เขตก่อน --</option>', { col: 'col-3' })}
-          ${field('postal_code', 'รหัสไปรษณีย์', { col: 'col-3', attrs: 'inputmode="numeric" maxlength="5" autocomplete="off"', hint: 'เลือกอำเภอ/ตำบลแล้วจะขึ้นอัตโนมัติ หรือพิมพ์รหัสเพื่อค้นหา' })}
+          ${field('postal_code', 'รหัสไปรษณีย์', { col: 'col-3', attrs: 'inputmode="numeric" maxlength="5" autocomplete="off"', hint: 'เลือกอำเภอ/ตำบลแล้วจะขึ้นอัตโนมัติ หรือพิมพ์รหัสเองได้' })}
         </div>
         <h4 style="margin:26px 0 14px;font-size:15px;color:var(--text-2)">บิดา มารดา และผู้ปกครอง</h4>
         <div class="form-grid">
@@ -129,14 +130,14 @@
           ${field('student_id', 'เลขประจำตัวนักเรียน/นักศึกษา', { col: 'col-4', attrs: 'inputmode="numeric" maxlength="20"' })}
           ${select('academic_year_id', 'ปีการศึกษา', options(meta.years, { label: 'name', selected: v('academic_year_id', curYear), placeholder: '-- เลือกปีการศึกษา --' }), { col: 'col-4', req: true })}
           ${select('department_id', 'แผนกวิชา', options(meta.departments, { selected: v('department_id'), placeholder: '-- เลือกแผนกวิชา --' }), { col: 'col-4' })}
-          ${select('education_level', 'ระดับชั้น', options(meta.levels, { selected: v('education_level'), placeholder: '-- เลือกระดับชั้น --' }), { col: 'col-2' })}
+          ${select('education_level', 'ระดับชั้น', options(opts('levels', v('education_level')), { selected: v('education_level'), placeholder: '-- เลือกระดับชั้น --' }), { col: 'col-2' })}
           ${field('class_group', 'กลุ่ม/ห้อง', { col: 'col-2' })}
           ${select('status', 'สถานะสมาชิก', options(Object.entries(meta.statuses).map(([k, l]) => ({ id: k, name: l })), { selected: v('status', 'pending') }), { col: 'col-2' })}
           ${field('joined_date', 'วันที่สมัคร', { type: 'date', col: 'col-2' })}
         </div>
         <h4 style="margin:26px 0 14px;font-size:15px;color:var(--text-2)">ทะเบียนสมาชิก (แบบ อวท.10)</h4>
         <div class="form-grid">
-          ${select('member_type', 'ระดับสมาชิก (บันทึกของเจ้าหน้าที่)', options((meta.member_types || []).map(t => ({ id: t, name: 'สมาชิก' + t })), { selected: v('member_type', isEdit ? '' : 'สามัญ ระดับสถานศึกษา'), placeholder: '-- เลือก --' }), { col: 'col-3' })}
+          ${select('member_type', 'ระดับสมาชิก (บันทึกของเจ้าหน้าที่)', options(opts('member_types', v('member_type')).map(t => ({ id: t, name: 'สมาชิก' + t })), { selected: v('member_type', isEdit ? '' : (meta.member_types || [])[0] || ''), placeholder: '-- เลือก --' }), { col: 'col-3' })}
           <div class="field col-3 half"><label for="f_registration_no">ทะเบียนเลขที่</label>
             <div class="input-group">
               <input class="input mono" id="f_registration_no" name="registration_no" value="${esc(v('registration_no'))}" maxlength="30" placeholder="เช่น 69/6921010001" autocomplete="off">
@@ -213,7 +214,13 @@
       const h = form.querySelector('[data-hint="postal_code"]');
       h.className = 'hint' + (state ? ' ' + state : ''); h.textContent = text;
     };
-    const DEFAULT_HINT = 'เลือกอำเภอ/ตำบลแล้วจะขึ้นอัตโนมัติ หรือพิมพ์รหัสเพื่อค้นหา';
+    const DEFAULT_HINT = 'เลือกอำเภอ/ตำบลแล้วจะขึ้นอัตโนมัติ หรือพิมพ์รหัสเองได้';
+    // ตัวเลือก "+ เพิ่มใหม่" ท้ายรายการ — ใช้เมื่อไม่มีจังหวัด/อำเภอ/ตำบลที่ต้องการในฐานข้อมูล
+    const NEW = '__new__';
+    const newOpt = (text) => `<option value="${NEW}">+ ${text}</option>`;
+    const prev = { province_id: '', district_id: '', subdistrict_id: '' };
+    const sync = () => Object.keys(prev).forEach(k => { prev[k] = el(k).value === NEW ? '' : el(k).value; });
+    const isBkk = () => (el('province_id').selectedOptions[0] || {}).text === 'กรุงเทพมหานคร';
 
     async function loadDistricts(pid) {
       if (!pid) return [];
@@ -228,23 +235,80 @@
     const withPrefix = (o) => o.name;
 
     function setLabels() {
-      const bkk = (el('province_id').selectedOptions[0] || {}).text === 'กรุงเทพมหานคร';
+      const bkk = isBkk();
       label('district_id', bkk ? 'เขต' : 'อำเภอ');
       label('subdistrict_id', bkk ? 'แขวง' : 'ตำบล');
     }
 
+    async function fillProvinces(selected) {
+      const provinces = (await API.get('/api/address/provinces')).items;
+      el('province_id').innerHTML = options(provinces, { selected, placeholder: '-- เลือกจังหวัด --' }) + newOpt('เพิ่มจังหวัดใหม่');
+    }
     async function fillDistricts(pid, selected) {
       districts = await loadDistricts(pid);
       el('district_id').innerHTML = pid
-        ? options(districts, { label: withPrefix, selected, placeholder: '-- เลือกอำเภอ/เขต --' })
+        ? options(districts, { label: withPrefix, selected, placeholder: '-- เลือกอำเภอ/เขต --' }) + newOpt('เพิ่มอำเภอ/เขตใหม่')
         : '<option value="">-- เลือกจังหวัดก่อน --</option>';
       setLabels();
     }
     async function fillSubdistricts(did, selected) {
       subdistricts = await loadSubdistricts(did);
       el('subdistrict_id').innerHTML = did
-        ? options(subdistricts, { label: withPrefix, selected, placeholder: '-- เลือกตำบล/แขวง --' })
+        ? options(subdistricts, { label: withPrefix, selected, placeholder: '-- เลือกตำบล/แขวง --' }) + newOpt('เพิ่มตำบล/แขวงใหม่')
         : '<option value="">-- เลือกอำเภอ/เขตก่อน --</option>';
+    }
+
+    /** กล่องเพิ่มจังหวัด / อำเภอ / ตำบล เอง แล้วเลือกรายการที่เพิ่มให้ทันที */
+    function addNew(kind) {
+      const pid = el('province_id').value, did = el('district_id').value;
+      const pvName = (el('province_id').selectedOptions[0] || {}).text || '';
+      const ds = districts.find(d => String(d.id) === did);
+      const bkk = isBkk();
+      const cfg = {
+        province_id: { word: 'จังหวัด', sub: 'เพิ่มจังหวัดที่ไม่มีในรายการ', ph: 'เช่น บึงกาฬ' },
+        district_id: { word: bkk ? 'เขต' : 'อำเภอ', sub: 'ใน' + (bkk ? '' : 'จังหวัด') + pvName, ph: 'ชื่อ' + (bkk ? 'เขต' : 'อำเภอ') },
+        subdistrict_id: { word: bkk ? 'แขวง' : 'ตำบล', sub: ds ? `ใน${ds.prefix || ''}${ds.name} ${pvName}` : '', ph: 'ชื่อ' + (bkk ? 'แขวง' : 'ตำบล') },
+      }[kind];
+      const isSub = kind === 'subdistrict_id';
+      const zip = el('postal_code').value;
+      UI.formModal({
+        title: 'เพิ่ม' + cfg.word + 'ใหม่', subtitle: cfg.sub, icon: 'plus', size: 'sm', submitText: 'เพิ่ม' + cfg.word,
+        body: `
+          <div class="field col-12"><label for="af_name">ชื่อ${cfg.word} <span class="req">*</span></label>
+            <input class="input" id="af_name" name="name" maxlength="100" placeholder="${esc(cfg.ph)}">
+            <span class="hint">ไม่ต้องพิมพ์คำว่า "${cfg.word}" นำหน้า</span></div>
+          ${isSub ? `<div class="field col-12"><label for="af_postal_code">รหัสไปรษณีย์ <span class="req">*</span></label>
+            <input class="input" id="af_postal_code" name="postal_code" inputmode="numeric" maxlength="5" value="${esc(/^\d{5}$/.test(zip) ? zip : '')}" placeholder="5 หลัก"></div>` : ''}`,
+        onReady: (f) => {
+          if (isSub) f.postal_code.addEventListener('input', (e) => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 5); });
+        },
+        onSubmit: async (f, m) => {
+          const errors = {};
+          if (!f.name.value.trim()) errors.name = 'กรุณากรอกชื่อ' + cfg.word;
+          if (isSub && !/^\d{5}$/.test(f.postal_code.value)) errors.postal_code = 'รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก';
+          if (Object.keys(errors).length) return m.invalid(errors);
+          let r;
+          if (kind === 'province_id') {
+            r = await API.post('/api/address/provinces', { name: f.name.value });
+            await fillProvinces(r.item.id);
+            await fillDistricts(r.item.id, '');
+            await fillSubdistricts('');
+          } else if (kind === 'district_id') {
+            r = await API.post('/api/address/districts', { province_id: pid, name: f.name.value });
+            delete cache.districts[pid];
+            await fillDistricts(pid, r.item.id);
+            await fillSubdistricts(r.item.id, '');
+          } else {
+            r = await API.post('/api/address/subdistricts', { district_id: did, name: f.name.value, postal_code: f.postal_code.value });
+            delete cache.districts[pid]; delete cache.subdistricts[did];
+            await fillDistricts(pid, did);
+            await fillSubdistricts(did, r.item.id);
+          }
+          sync();
+          autoZip();
+          toast(r.message);
+        },
+      });
     }
 
     /** ตั้งรหัสไปรษณีย์จากอำเภอ/ตำบลที่เลือก */
@@ -253,7 +317,10 @@
       if (sd) { el('postal_code').value = sd.postal_code; zipHint('✓ รหัสไปรษณีย์ของ' + (sd.prefix || '') + sd.name, 'ok'); return; }
       const ds = districts.find(d => String(d.id) === el('district_id').value);
       if (!ds) { el('postal_code').value = ''; zipHint(DEFAULT_HINT); return; }
-      if (ds.postal_codes.length === 1) {
+      if (!ds.postal_codes.length) {   // อำเภอที่เพิ่มเองและยังไม่มีตำบล
+        el('postal_code').value = '';
+        zipHint('พิมพ์รหัสไปรษณีย์เองได้ หรือเพิ่มตำบล/แขวงพร้อมรหัสไปรษณีย์');
+      } else if (ds.postal_codes.length === 1) {
         el('postal_code').value = ds.postal_codes[0];
         zipHint('✓ รหัสไปรษณีย์ของ' + (ds.prefix || '') + ds.name, 'ok');
       } else {
@@ -267,11 +334,14 @@
       const code = el('postal_code').value;
       if (!/^\d{5}$/.test(code)) { zipHint(code ? 'รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก' : DEFAULT_HINT, code ? 'error' : ''); return; }
       const cur = subdistricts.find(s => String(s.id) === el('subdistrict_id').value);
-      if (cur && cur.postal_code === code) return;
+      if (cur) {   // เลือกตำบลไว้แล้ว → ใช้รหัสที่พิมพ์เอง ไม่ย้ายจังหวัด/อำเภอ
+        return zipHint(cur.postal_code === code ? '✓ รหัสไปรษณีย์ของ' + (cur.prefix || '') + cur.name
+          : `✓ ใช้รหัสที่กรอกเอง (รหัสในฐานข้อมูลของ${cur.prefix || ''}${cur.name} คือ ${cur.postal_code})`, 'ok');
+      }
       let items;
       try { items = (await API.get('/api/address/postal/' + code)).items; } catch (e) { return zipHint(e.message, 'error'); }
       if (el('postal_code').value !== code) return;   // ผู้ใช้พิมพ์ต่อแล้ว
-      if (!items.length) return zipHint('ไม่พบรหัสไปรษณีย์นี้ในฐานข้อมูล', 'error');
+      if (!items.length) return zipHint('ไม่พบรหัสนี้ในฐานข้อมูล — ระบบจะบันทึกรหัสที่กรอกเอง');
       const provinces = [...new Set(items.map(i => i.province_id))];
       const dists = [...new Set(items.map(i => i.district_id))];
       if (provinces.length === 1) {
@@ -283,6 +353,7 @@
           await fillSubdistricts('');
         }
       }
+      sync();
       const names = [...new Set(items.map(i => (i.district_prefix || '') + i.district + ' ' + i.province))];
       zipHint(items.length === 1 ? `✓ ${items[0].subdistrict_prefix || ''}${items[0].subdistrict} ${names[0]}`
         : `พบ ${items.length} ตำบล/แขวง ใน ${names.join(', ')} — กรุณาเลือกให้ตรง`, items.length === 1 ? 'ok' : '');
@@ -290,8 +361,7 @@
 
     async function init() {
       try {
-        const provinces = (await API.get('/api/address/provinces')).items;
-        el('province_id').innerHTML = options(provinces, { selected: v('province_id'), placeholder: '-- เลือกจังหวัด --' });
+        await fillProvinces(v('province_id'));
         await fillDistricts(v('province_id'), v('district_id'));
         await fillSubdistricts(v('district_id'), v('subdistrict_id'));
         if (!member || !member.postal_code) autoZip();
@@ -299,16 +369,32 @@
         el('province_id').innerHTML = '<option value="">โหลดข้อมูลจังหวัดไม่สำเร็จ</option>';
         toast(e.message, 'error');
       }
+      sync();
+      // เลือก "+ เพิ่มใหม่" → คืนค่าที่เลือกไว้เดิมก่อน แล้วเปิดกล่องเพิ่มข้อมูล
+      const wantsNew = (e) => {
+        if (e.target.value !== NEW) return false;
+        e.target.value = prev[e.target.name];
+        addNew(e.target.name);
+        return true;
+      };
       el('province_id').addEventListener('change', async (e) => {
+        if (wantsNew(e)) return;
         await fillDistricts(e.target.value, '');
         await fillSubdistricts('');
+        sync();
         autoZip();
       });
       el('district_id').addEventListener('change', async (e) => {
+        if (wantsNew(e)) return;
         await fillSubdistricts(e.target.value, '');
+        sync();
         autoZip();
       });
-      el('subdistrict_id').addEventListener('change', autoZip);
+      el('subdistrict_id').addEventListener('change', (e) => {
+        if (wantsNew(e)) return;
+        sync();
+        autoZip();
+      });
       const debouncedZip = debounce(fromZip, 300);
       el('postal_code').addEventListener('input', (e) => {
         e.target.value = e.target.value.replace(/\D/g, '').slice(0, 5);

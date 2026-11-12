@@ -7,7 +7,8 @@ from datetime import date
 from flask import current_app
 from sqlalchemy import inspect, text
 
-from models import db, Position, AcademicYear, User, Member, Province, District, Subdistrict, ROLE_PERMISSIONS
+from models import (db, Position, AcademicYear, User, Member, Province, District, Subdistrict, ROLE_PERMISSIONS,
+                    FormOption, OPTION_CATEGORIES)
 
 ADDRESS_DATA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "thai_address.json")
 
@@ -225,10 +226,21 @@ def migrate_legacy_addresses():
     return changed
 
 
+def ensure_form_options():
+    """ตัวเลือกดรอปดาวน์ตั้งต้นของแบบฟอร์มสมัคร (ครั้งแรกเท่านั้น — ถ้าผู้ใช้ลบเองภายหลังจะไม่เพิ่มกลับ)"""
+    if db.session.query(FormOption.id).first():
+        return
+    for cat, (_label, _col, _max, defaults) in OPTION_CATEGORIES.items():
+        for i, name in enumerate(defaults, 1):
+            db.session.add(FormOption(category=cat, name=name, sort_order=i))
+    db.session.commit()
+
+
 def ensure_defaults():
     migrate_columns()
     migrate_elections_table()
     migrate_member_types()
+    ensure_form_options()
     load_address_data()
     migrate_legacy_addresses()
     changed = False

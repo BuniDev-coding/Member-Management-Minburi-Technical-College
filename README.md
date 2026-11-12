@@ -117,6 +117,7 @@ managemember/
 │  ├─ member-view.html      ดูประวัติสมาชิกตามรูปแบบที่เลือก
 │  ├─ positions.html        จัดการตำแหน่ง + แผนกวิชา
 │  ├─ years.html            จัดการปีการศึกษา + ดูสมาชิกแยกตามปี
+│  ├─ registration-settings.html  ตั้งค่าข้อมูลการสมัคร (ตัวเลือกดรอปดาวน์ + จังหวัด/อำเภอ/ตำบล/รหัสไปรษณีย์)
 │  ├─ reports.html          รายงาน + ส่งออก Excel / PDF
 │  ├─ users.html            จัดการผู้ใช้งาน สิทธิ์ และสำรองข้อมูล
 │  ├─ css/  style.css, profile-templates.css
@@ -222,6 +223,11 @@ managemember/
 | POST | `/api/years/<id>/set-current` | ตั้งเป็นปีการศึกษาปัจจุบัน |
 | GET / POST | `/api/departments` | รายการ / เพิ่ม |
 | PUT / DELETE | `/api/departments/<id>` | แก้ไข / ลบ |
+| GET / POST | `/api/options` | ตัวเลือกดรอปดาวน์ของแบบฟอร์มสมัคร (คำนำหน้า เพศ กรุ๊ปเลือด ระดับชั้น ระดับสมาชิก) / เพิ่ม |
+| PUT / DELETE | `/api/options/<id>` | แก้ไข / ลบ ตัวเลือก |
+| POST | `/api/options/reorder` | จัดลำดับตัวเลือก |
+| GET / POST | `/api/address/provinces` · `districts` · `subdistricts` | รายการ / เพิ่ม จังหวัด อำเภอ ตำบล (ตำบลมีรหัสไปรษณีย์) |
+| PUT / DELETE | `/api/address/provinces/<id>` · `districts/<id>` · `subdistricts/<id>` | แก้ไข / ลบ |
 
 ### รายงาน (สิทธิ์ `reports`)
 | Method | Path | คำอธิบาย |

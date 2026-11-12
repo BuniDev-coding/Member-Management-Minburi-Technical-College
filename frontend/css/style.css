@@ -781,3 +781,28 @@ a.list-item:hover { background: var(--hover); color: inherit; }
 .cand-table td { vertical-align: middle; }
 .cand-table .input { height: 36px; }
 .rank-1 { background: #FFF8E1; }
+
+/* ---------------------------------------------------------------------
+   หน้าตั้งค่าข้อมูลการสมัคร: จังหวัด → อำเภอ → ตำบล
+   --------------------------------------------------------------------- */
+.addr-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.addr-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+.addr-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 34px; }
+.addr-head b { font-size: 15px; min-width: 0; }
+.addr-col .input { height: 38px; font-size: 14px; }
+.addr-list { height: 440px; overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
+.addr-item { display: flex; align-items: center; gap: 8px; padding: 7px 6px 7px 10px; border-radius: 8px; font-size: 14px; }
+.addr-item[role=button] { cursor: pointer; }
+.addr-item:hover { background: var(--hover); }
+.addr-item:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.addr-item.selected { background: var(--primary-soft); }
+.addr-item .grow { flex: 1; min-width: 0; }
+.addr-item b { font-weight: 500; overflow-wrap: anywhere; }
+.addr-item.selected b { color: var(--primary-dark); font-weight: 600; }
+.addr-item small { display: block; color: var(--muted); font-size: 12.5px; overflow-wrap: anywhere; }
+.addr-item .icon-btn { border-color: transparent; background: none; flex: 0 0 auto; }
+.addr-empty { padding: 28px 12px; text-align: center; color: var(--muted); font-size: 14px; }
+@media (max-width: 1000px) {
+  .addr-cols { grid-template-columns: minmax(0, 1fr); }
+  .addr-list { height: auto; max-height: 320px; }
+}

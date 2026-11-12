@@ -68,6 +68,20 @@ CREATE TABLE IF NOT EXISTS positions (
 );
 
 -- ---------------------------------------------------------------------
+-- 4.0) ตัวเลือกดรอปดาวน์ของแบบฟอร์มสมัคร (แก้ไขได้ที่หน้า "ตั้งค่าข้อมูลการสมัคร")
+--      category: prefix / gender / blood_type / education_level / member_type
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS form_options (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    category        VARCHAR(30)  NOT NULL,
+    name            VARCHAR(100) NOT NULL,
+    sort_order      INTEGER      NOT NULL DEFAULT 0,
+    created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_form_options_category_name UNIQUE (category, name)
+);
+CREATE INDEX IF NOT EXISTS ix_form_options_category ON form_options(category);
+
+-- ---------------------------------------------------------------------
 -- 4.1) ข้อมูลที่อยู่ประเทศไทย (นำเข้าอัตโนมัติจาก backend/data/thai_address.json)
 --      77 จังหวัด / 930 อำเภอ-เขต / 7,436 ตำบล-แขวง พร้อมรหัสไปรษณีย์
 -- ---------------------------------------------------------------------

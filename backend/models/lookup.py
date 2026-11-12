@@ -67,3 +67,33 @@ class Position(BaseModel):
             "is_executive": self.is_executive, "is_committee": self.is_committee,
             "color": self.color, "description": self.description,
         }
+
+
+# ตัวเลือกในดรอปดาวน์ของแบบฟอร์มสมัครสมาชิก (แก้ไขได้ที่หน้า "ตั้งค่าข้อมูลการสมัคร")
+# category → (ชื่อที่แสดง, คอลัมน์ในตาราง members ที่เก็บค่า, ความยาวสูงสุด, ค่าเริ่มต้น)
+OPTION_CATEGORIES = {
+    "prefix": ("คำนำหน้า", "prefix", 20, ["นาย", "นางสาว", "นาง", "เด็กชาย", "เด็กหญิง"]),
+    "gender": ("เพศ", "gender", 10, ["ชาย", "หญิง", "อื่น ๆ"]),
+    "blood_type": ("กรุ๊ปเลือด", "blood_type", 5, ["A", "B", "O", "AB"]),
+    "education_level": ("ระดับชั้น", "education_level", 20, ["ปวช.1", "ปวช.2", "ปวช.3", "ปวส.1", "ปวส.2"]),
+    "member_type": ("ระดับสมาชิก", "member_type", 30,
+                    ["สามัญ ระดับสถานศึกษา", "สามัญ ระดับจังหวัด", "สามัญ ระดับภาค", "สามัญ ระดับชาติ", "วิสามัญ"]),
+}
+
+
+class FormOption(BaseModel):
+    __tablename__ = "form_options"
+    __table_args__ = (db.UniqueConstraint("category", "name", name="uq_form_options_category_name"),)
+
+    id = db.Column(db.Integer, primary_key=True)
+    category = db.Column(db.String(30), nullable=False, index=True)
+    name = db.Column(db.String(100), nullable=False)
+    sort_order = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
+
+    @classmethod
+    def names(cls, category):
+        return [o.name for o in cls.query.filter_by(category=category).order_by(cls.sort_order, cls.id)]
+
+    def to_dict(self):
+        return {"id": self.id, "category": self.category, "name": self.name, "sort_order": self.sort_order}
